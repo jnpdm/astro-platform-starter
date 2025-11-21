@@ -67,6 +67,12 @@ export async function getPartner(partnerId: string): Promise<PartnerRecord | nul
             return deserializePartner(data as any);
         });
     } catch (error) {
+        // In development, Netlify Blobs might not be available
+        if (import.meta.env.DEV) {
+            console.warn(`Netlify Blobs not available in development, partner ${partnerId} not found`);
+            return null;
+        }
+
         throw new StorageError(
             `Failed to retrieve partner ${partnerId}`,
             'GET_PARTNER_ERROR',
@@ -125,6 +131,13 @@ export async function listPartners(): Promise<PartnerRecord[]> {
             return partners;
         });
     } catch (error) {
+        // In development, Netlify Blobs might not be available
+        // Return empty array instead of throwing error
+        if (import.meta.env.DEV) {
+            console.warn('Netlify Blobs not available in development, returning empty partner list');
+            return [];
+        }
+
         throw new StorageError(
             'Failed to list partners',
             'LIST_PARTNERS_ERROR',
