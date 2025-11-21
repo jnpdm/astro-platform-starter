@@ -1,19 +1,294 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Markdown from '../components/Markdown.astro';
+import { listPartners } from '../utils/storage';
+import { filterPartnersByRole, groupPartnersByGate, getRoleDashboardMessage } from '../utils/rbac';
+import { getUserSession } from '../middleware/auth';
+import type { PartnerRecord, GateId, ActivityItem } from '../types/partner';
+import { loadGatesConfig } from '../utils/configCache';
 
-const explainer = `
-An Astro website can go way beyond static pages - on the right platform.
+// Load gates configuration with caching
+const gatesConfig = await loadGatesConfig();
 
-Netlify supports not only [Streaming SSR](https://docs.astro.build/en/guides/server-side-rendering/#html-streaming) and fast [Edge Middleware](https://docs.astro.build/en/guides/middleware/), but also [on-demand revalidation](https://www.netlify.com/blog/cache-tags-and-purge-api-on-netlify/) and [stale-while-revalidate](https://www.netlify.com/blog/swr-and-fine-grained-cache-control/). 
-Any page or data can be rebuilt only when needed, without site visitors ever getting a performance hit.
-`;
+// Get current user from session
+const currentUser = getUserSession();
+
+// Fetch all partners
+let allPartners: PartnerRecord[] = [];
+let error: string | null = null;
+
+try {
+    allPartners = await listPartners();
+} catch (e) {
+    console.error('Failed to load partners:', e);
+    error = 'Failed to load partner data. Please try again later.';
+}
+
+// Filter partners based on user role
+const partners = filterPartnersByRole(allPartners, currentUser);
+
+// Group partners by current gate (already filtered by role)
+const partnersByGate = groupPartnersByGate(allPartners, currentUser);
+
+// Get role-specific dashboard message
+const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.role) : '';
+
+// Calculate quick stats
+const totalPartners = partners.length;
+const partnersByGateCount = Object.entries(partnersByGate).map(([gate, partners]) => ({
+    gate,
+    count: partners.length,
+    name: gatesConfig.gates.find((g) => g.id === gate)?.name || gate
+}));
+
+// Get upcoming launches (partners with target launch dates in next 60 days)
+const now = new Date();
+const sixtyDaysFromNow = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+const upcomingLaunches = partners.filter((p) => {
+    if (!p.targetLaunchDate) return false;
+    const launchDate = new Date(p.targetLaunchDate);
+    return launchDate >= now && launchDate <= sixtyDaysFromNow;
+}).length;
+
+// Generate recent activity feed (mock data for now - will be populated from actual gate completions)
+const recentActivity: ActivityItem[] = partners
+    .flatMap((partner) => {
+        const activities: ActivityItem[] = [];
+
+        // Add gate completion activities
+        Object.entries(partner.gates || {}).forEach(([gateId, gateProgress]: [string, any]) => {
+            if (gateProgress?.completedDate) {
+                activities.push({
+                    id: `${partner.id}-${gateId}-completion`,
+                    type: 'gate-completion',
+                    partnerId: partner.id,
+                    partnerName: partner.partnerName,
+                    description: `Completed ${gatesConfig.gates.find((g) => g.id === gateId)?.name || gateId}`,
+                    timestamp: new Date(gateProgress.completedDate),
+                    actor: partner.pamOwner,
+                    actorRole: 'PAM'
+                });
+            }
+        });
+
+        return activities;
+    })
+    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
+    .slice(0, 10);
+
+// Gate order for display
+const gateOrder: GateId[] = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
+
+// Helper function to get status badge color
+function getStatusColor(status: string): string {
+    switch (status) {
+        case 'passed':
+            return 'bg-green-600';
+        case 'in-progress':
+            return 'bg-yellow-600';
+        case 'failed':
+            return 'bg-red-600';
+        case 'blocked':
+            return 'bg-orange-600';
+        default:
+            return 'bg-gray-600';
+    }
+}
+
+// Helper function to format date
+function formatDate(date: Date | string | undefined): string {
+    if (!date) return 'Not set';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Helper function to get relative time
+function getRelativeTime(date: Date): string {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+
+    if (minutes < 60) return `${minutes}m ago`;
+    if (hours < 24) return `${hours}h ago`;
+    return `${days}d ago`;
+}
 ---
 
-<Layout title="Welcome to Astro.">
-    <h1 class="mb-10">Netlify Platform Starter for Astro</h1>
-    <Markdown content={explainer} class="mb-10 text-lg" />
-    <p>
-        <a href="https://docs.netlify.com/frameworks/astro/" class="btn btn-lg sm:min-w-64">Read the Docs</a>
-    </p>
+<Layout title="Dashboard - Kuiper Partner Onboarding Hub">
+    <div class="py-8">
+        <h1 class="text-4xl font-bold mb-2">Partner Onboarding Dashboard</h1>
+        <p class="text-gray-300 mb-4">Track partner progress through the gated onboarding journey</p>
+
+        {
+            currentUser && (
+                <div class="bg-blue-900/30 border border-blue-700 text-blue-200 px-4 py-2 rounded mb-6 text-sm">
+                    <span class="font-semibold">{currentUser.role}:</span> {roleDashboardMessage}
+                </div>
+            )
+        }
+
+        {error && <div class="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded mb-6">{error}</div>}
+
+        <!-- Quick Stats Section -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Total Partners</div>
+                <div class="text-3xl font-bold">{totalPartners}</div>
+            </div>
+
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Upcoming Launches</div>
+                <div class="text-3xl font-bold text-blue-400">{upcomingLaunches}</div>
+                <div class="text-gray-400 text-xs mt-1">Next 60 days</div>
+            </div>
+
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-2">Partners by Gate</div>
+                <div class="space-y-1">
+                    {
+                        partnersByGateCount.slice(0, 3).map(({ name, count }) => (
+                            <div class="flex justify-between text-sm">
+                                <span class="text-gray-300">{name.replace(/^Gate \d+: /, '')}</span>
+                                <span class="font-semibold">{count}</span>
+                            </div>
+                        ))
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Partners by Gate Section -->
+            <div class="lg:col-span-2">
+                <h2 class="text-2xl font-bold mb-4">Partners by Gate</h2>
+
+                {
+                    totalPartners === 0 ? (
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
+                            <p class="text-gray-400 mb-4">No partners found</p>
+                            <a href="/api/partners" class="text-blue-400 hover:text-blue-300">
+                                Create your first partner
+                            </a>
+                        </div>
+                    ) : (
+                        <div class="space-y-6">
+                            {gateOrder.map((gateId) => {
+                                const gatePartners = partnersByGate[gateId] || [];
+                                const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+
+                                if (gatePartners.length === 0) return null;
+
+                                return (
+                                    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                                        <div class="flex items-center justify-between mb-4">
+                                            <h3 class="text-xl font-semibold">{gateInfo?.name || gateId}</h3>
+                                            <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
+                                                {gatePartners.length} {gatePartners.length === 1 ? 'partner' : 'partners'}
+                                            </span>
+                                        </div>
+
+                                        <div class="grid grid-cols-1 gap-4">
+                                            {gatePartners.map((partner) => {
+                                                const currentGateStatus = partner.gates?.[gateId]?.status || 'not-started';
+
+                                                return (
+                                                    <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
+                                                        <div class="flex items-start justify-between mb-2">
+                                                            <div class="flex-1">
+                                                                <h4 class="font-semibold text-lg mb-1">
+                                                                    <a href={`/partner/${partner.id}`} class="hover:text-blue-400 transition-colors">
+                                                                        {partner.partnerName}
+                                                                    </a>
+                                                                </h4>
+                                                                <div class="flex flex-wrap gap-3 text-sm text-gray-400">
+                                                                    <span>
+                                                                        PAM: <span class="text-gray-300">{partner.pamOwner}</span>
+                                                                    </span>
+                                                                    <span>•</span>
+                                                                    <span>
+                                                                        Tier: <span class="text-gray-300 uppercase">{partner.tier}</span>
+                                                                    </span>
+                                                                    {partner.targetLaunchDate && (
+                                                                        <>
+                                                                            <span>•</span>
+                                                                            <span>
+                                                                                Launch:{' '}
+                                                                                <span class="text-gray-300">{formatDate(partner.targetLaunchDate)}</span>
+                                                                            </span>
+                                                                        </>
+                                                                    )}
+                                                                </div>
+                                                            </div>
+                                                            <span class={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(currentGateStatus)}`}>
+                                                                {currentGateStatus.replace('-', ' ').toUpperCase()}
+                                                            </span>
+                                                        </div>
+
+                                                        {partner.gates?.[gateId]?.blockers && partner.gates[gateId].blockers!.length > 0 && (
+                                                            <div class="mt-2 text-sm text-orange-400">
+                                                                ⚠️ {partner.gates[gateId].blockers!.length} blocker(s)
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )
+                }
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="lg:col-span-1">
+                <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
+
+                {
+                    recentActivity.length === 0 ? (
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
+                            <p class="text-gray-400">No recent activity</p>
+                        </div>
+                    ) : (
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                            <div class="space-y-4">
+                                {recentActivity.map((activity) => (
+                                    <div class="border-b border-gray-700 last:border-b-0 pb-4 last:pb-0">
+                                        <div class="flex items-start gap-3">
+                                            <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2" />
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm text-gray-300">
+                                                    <a href={`/partner/${activity.partnerId}`} class="font-medium hover:text-blue-400">
+                                                        {activity.partnerName}
+                                                    </a>
+                                                </p>
+                                                <p class="text-sm text-gray-400 mt-1">{activity.description}</p>
+                                                <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                                                    <span>{activity.actor}</span>
+                                                    <span>•</span>
+                                                    <span>{getRelativeTime(activity.timestamp)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )
+                }
+
+                <!-- Quick Links -->
+                <div class="mt-6 bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                    <h3 class="font-semibold mb-3">Quick Links</h3>
+                    <div class="space-y-2">
+                        <a href="/documentation" class="block text-sm text-blue-400 hover:text-blue-300"> 📚 Documentation Hub </a>
+                        <a href="/reports" class="block text-sm text-blue-400 hover:text-blue-300"> 📊 Reports & Analytics </a>
+                        <a href="/api/partners" class="block text-sm text-blue-400 hover:text-blue-300"> ➕ Create New Partner </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </Layout>

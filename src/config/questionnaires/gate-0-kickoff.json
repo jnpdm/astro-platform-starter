@@ -1,0 +1,462 @@
+{
+    "id": "gate-0-kickoff",
+    "version": "1.0.0",
+    "metadata": {
+        "name": "Gate 0: Onboarding Kickoff Readiness",
+        "description": "Validates readiness for white-glove onboarding support",
+        "gate": "gate-0",
+        "estimatedTime": 45,
+        "requiredRoles": [
+            "PAM",
+            "PDM"
+        ],
+        "primaryRole": "PDM",
+        "icon": "rocket"
+    },
+    "gateCriteria": [
+        "Contract Execution Complete",
+        "Partner Team Identified and Committed",
+        "Launch Timing Within 12 Months",
+        "Financial Bar for White-Glove Onboarding",
+        "Strategic Value Assessment",
+        "Operational Readiness Indicators"
+    ],
+    "sections": [
+        {
+            "id": "contract-execution",
+            "title": "Contract Execution Complete",
+            "description": "Verify that the partnership contract has been fully executed",
+            "fields": [
+                {
+                    "id": "contract-signed",
+                    "type": "radio",
+                    "label": "Has the contract been signed by both parties?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "contract-signature-date",
+                    "type": "date",
+                    "label": "Contract Signature Date",
+                    "required": true
+                },
+                {
+                    "id": "contract-type",
+                    "type": "select",
+                    "label": "Contract Type",
+                    "required": true,
+                    "options": [
+                        "PPA",
+                        "Distribution",
+                        "Sales-Agent",
+                        "Other"
+                    ]
+                },
+                {
+                    "id": "contract-reference-number",
+                    "type": "text",
+                    "label": "Contract Reference Number",
+                    "required": true
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "contract-signed",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Contract Execution Checklist",
+                    "url": "/docs/contract-execution",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "partner-team",
+            "title": "Partner Team Identified and Committed",
+            "description": "Ensure partner has dedicated team members assigned to the onboarding",
+            "fields": [
+                {
+                    "id": "partner-executive-sponsor",
+                    "type": "text",
+                    "label": "Partner Executive Sponsor Name",
+                    "required": true
+                },
+                {
+                    "id": "partner-project-manager",
+                    "type": "text",
+                    "label": "Partner Project Manager Name",
+                    "required": true
+                },
+                {
+                    "id": "partner-technical-lead",
+                    "type": "text",
+                    "label": "Partner Technical Lead Name",
+                    "required": true
+                },
+                {
+                    "id": "partner-sales-lead",
+                    "type": "text",
+                    "label": "Partner Sales Lead Name",
+                    "required": true
+                },
+                {
+                    "id": "team-commitment-confirmed",
+                    "type": "radio",
+                    "label": "Has team commitment been confirmed with time allocation?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "team-availability",
+                    "type": "textarea",
+                    "label": "Team Availability Details",
+                    "required": true,
+                    "helpText": "Describe team member availability and time commitment for onboarding"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "team-commitment-confirmed",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Partner Team Requirements",
+                    "url": "/docs/partner-team-requirements",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "launch-timing",
+            "title": "Launch Timing Within 12 Months",
+            "description": "Validate that partner launch is planned within 12 months",
+            "fields": [
+                {
+                    "id": "target-launch-date",
+                    "type": "date",
+                    "label": "Target Launch Date",
+                    "required": true
+                },
+                {
+                    "id": "launch-within-12-months",
+                    "type": "radio",
+                    "label": "Is launch planned within 12 months from today?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "launch-market",
+                    "type": "text",
+                    "label": "Launch Market/Country",
+                    "required": true
+                },
+                {
+                    "id": "launch-readiness-factors",
+                    "type": "textarea",
+                    "label": "Launch Readiness Factors",
+                    "required": true,
+                    "helpText": "Describe factors supporting the launch timeline (market readiness, regulatory approvals, infrastructure)"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "launch-within-12-months",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Launch Timeline Planning Guide",
+                    "url": "/docs/launch-timeline",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "financial-bar",
+            "title": "Financial Bar for White-Glove Onboarding",
+            "description": "Validate that partner meets financial criteria for white-glove support",
+            "fields": [
+                {
+                    "id": "ccv-amount",
+                    "type": "number",
+                    "label": "Contractually Committed Value (CCV) in USD",
+                    "required": true
+                },
+                {
+                    "id": "tier-classification",
+                    "type": "select",
+                    "label": "Partner Tier Classification",
+                    "required": true,
+                    "options": [
+                        "Tier 0",
+                        "Tier 1",
+                        "Tier 2"
+                    ]
+                },
+                {
+                    "id": "meets-tier-0-threshold",
+                    "type": "radio",
+                    "label": "Does partner meet Tier 0 threshold (CCV ≥ $50M)?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "country-lrp",
+                    "type": "number",
+                    "label": "Country Launch Revenue Potential (LRP) in USD",
+                    "required": true
+                },
+                {
+                    "id": "ccv-percentage-of-lrp",
+                    "type": "number",
+                    "label": "CCV as Percentage of Country LRP",
+                    "required": true
+                },
+                {
+                    "id": "meets-financial-bar",
+                    "type": "radio",
+                    "label": "Does partner meet financial bar for white-glove onboarding?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ],
+                    "helpText": "Tier 0 (CCV ≥ $50M) automatically qualifies. Tier 1 requires 4+ criteria met."
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "meets-financial-bar",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Financial Bar Criteria",
+                    "url": "/docs/financial-bar",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "strategic-value",
+            "title": "Strategic Value Assessment",
+            "description": "Evaluate strategic importance and value of the partnership",
+            "fields": [
+                {
+                    "id": "market-position",
+                    "type": "select",
+                    "label": "Partner's Market Position",
+                    "required": true,
+                    "options": [
+                        "Market Leader",
+                        "Strong Competitor",
+                        "Emerging Player",
+                        "Niche Player"
+                    ]
+                },
+                {
+                    "id": "geographic-reach",
+                    "type": "select",
+                    "label": "Geographic Reach",
+                    "required": true,
+                    "options": [
+                        "Global",
+                        "Multi-Regional",
+                        "Regional",
+                        "Local"
+                    ]
+                },
+                {
+                    "id": "customer-base-size",
+                    "type": "select",
+                    "label": "Customer Base Size",
+                    "required": true,
+                    "options": [
+                        "Large (>1M)",
+                        "Medium (100K-1M)",
+                        "Small (<100K)"
+                    ]
+                },
+                {
+                    "id": "strategic-alignment",
+                    "type": "textarea",
+                    "label": "Strategic Alignment with Kuiper Goals",
+                    "required": true,
+                    "helpText": "Describe how this partnership aligns with Kuiper's strategic objectives"
+                },
+                {
+                    "id": "competitive-advantage",
+                    "type": "textarea",
+                    "label": "Competitive Advantage",
+                    "required": true,
+                    "helpText": "Explain the competitive advantage this partnership provides"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "manual"
+            },
+            "documentationLinks": [
+                {
+                    "title": "Strategic Value Framework",
+                    "url": "/docs/strategic-value-framework",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "operational-readiness",
+            "title": "Operational Readiness Indicators",
+            "description": "Assess partner's operational readiness for onboarding",
+            "fields": [
+                {
+                    "id": "technical-infrastructure",
+                    "type": "radio",
+                    "label": "Does partner have adequate technical infrastructure?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No",
+                        "Partially"
+                    ]
+                },
+                {
+                    "id": "support-capabilities",
+                    "type": "radio",
+                    "label": "Does partner have customer support capabilities?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No",
+                        "In Development"
+                    ]
+                },
+                {
+                    "id": "sales-team-size",
+                    "type": "number",
+                    "label": "Sales Team Size",
+                    "required": true,
+                    "helpText": "Number of sales team members who will sell Kuiper services"
+                },
+                {
+                    "id": "previous-integration-experience",
+                    "type": "radio",
+                    "label": "Does partner have experience with similar API integrations?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "operational-readiness-score",
+                    "type": "select",
+                    "label": "Overall Operational Readiness",
+                    "required": true,
+                    "options": [
+                        "High",
+                        "Medium",
+                        "Low"
+                    ]
+                },
+                {
+                    "id": "readiness-notes",
+                    "type": "textarea",
+                    "label": "Operational Readiness Notes",
+                    "required": false,
+                    "helpText": "Additional notes on operational readiness, gaps, or concerns"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "operational-readiness-score",
+                        "operator": "in",
+                        "value": [
+                            "High",
+                            "Medium"
+                        ]
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Operational Readiness Assessment",
+                    "url": "/docs/operational-readiness",
+                    "type": "internal"
+                }
+            ]
+        }
+    ],
+    "validation": {
+        "requiredSections": [
+            "contract-execution",
+            "partner-team",
+            "launch-timing",
+            "financial-bar",
+            "strategic-value",
+            "operational-readiness"
+        ],
+        "minimumPassingSections": 4,
+        "allowPartialSubmission": false,
+        "specialRules": [
+            {
+                "description": "Tier 0 partners (CCV ≥ $50M) automatically qualify for white-glove onboarding",
+                "condition": "ccv-amount >= 50000000",
+                "action": "auto-approve"
+            },
+            {
+                "description": "Non-Tier 0 partners must meet at least 4 of 6 criteria",
+                "condition": "tier-classification != 'Tier 0'",
+                "action": "require-minimum-4-passing-sections"
+            }
+        ]
+    },
+    "documentation": [
+        {
+            "title": "Gate 0 Overview",
+            "url": "/docs/gate-0-overview",
+            "type": "internal"
+        },
+        {
+            "title": "White-Glove Onboarding Criteria",
+            "url": "/docs/white-glove-criteria",
+            "type": "internal"
+        }
+    ]
+}

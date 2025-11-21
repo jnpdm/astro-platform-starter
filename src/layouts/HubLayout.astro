@@ -1,0 +1,177 @@
+---
+import '../../src/styles/globals.css';
+import '@fontsource-variable/inter/wght.css';
+import interWoff2 from '@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url';
+import Header from '../components/Header.astro';
+import Navigation from '../components/Navigation.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+    title: string;
+    description?: string;
+}
+
+const { title, description } = Astro.props;
+const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{pageTitle}</title>
+        <meta name="viewport" content="width=device-width" />
+        <meta name="generator" content={Astro.generator} />
+        {description && <meta name="description" content={description} />}
+        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+        <link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin />
+
+        <!-- Netlify Identity Widget -->
+        <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    </head>
+    <body class="antialiased text-white bg-kuiper-dark">
+        <div class="hub-container">
+            <div class="hub-wrapper">
+                <Header />
+
+                <div class="navigation-wrapper">
+                    <Navigation />
+                </div>
+
+                <main class="main-content">
+                    <slot />
+                </main>
+
+                <Footer />
+            </div>
+        </div>
+
+        <!-- Netlify Identity initialization and authentication logic -->
+        <script>
+            import { transformUser, storeUserSession, clearUserSession, isProtectedRoute, getLoginRedirectUrl } from '../middleware/auth';
+
+            // Initialize Netlify Identity
+            if (window.netlifyIdentity) {
+                window.netlifyIdentity.on('init', (user) => {
+                    if (user) {
+                        const authUser = transformUser(user);
+                        if (authUser) {
+                            storeUserSession(authUser);
+                        }
+                    }
+                });
+
+                window.netlifyIdentity.on('login', (user) => {
+                    const authUser = transformUser(user);
+                    if (authUser) {
+                        storeUserSession(authUser);
+
+                        // Check for redirect parameter
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const redirect = urlParams.get('redirect');
+
+                        if (redirect) {
+                            window.location.href = redirect;
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                });
+
+                window.netlifyIdentity.on('logout', () => {
+                    clearUserSession();
+                    window.location.href = '/';
+                });
+
+                window.netlifyIdentity.on('error', (err) => {
+                    console.error('Netlify Identity error:', err);
+                });
+
+                // Check if user needs to be redirected to login
+                const currentPath = window.location.pathname;
+                const currentUser = window.netlifyIdentity.currentUser();
+
+                if (isProtectedRoute(currentPath) && !currentUser) {
+                    window.location.href = getLoginRedirectUrl(currentPath);
+                }
+            }
+
+            // Global login/logout functions
+            window.kuiperAuth = {
+                login: () => {
+                    if (window.netlifyIdentity) {
+                        window.netlifyIdentity.open('login');
+                    }
+                },
+                logout: () => {
+                    if (window.netlifyIdentity) {
+                        window.netlifyIdentity.logout();
+                    }
+                },
+                signup: () => {
+                    if (window.netlifyIdentity) {
+                        window.netlifyIdentity.open('signup');
+                    }
+                },
+                getCurrentUser: () => {
+                    if (window.netlifyIdentity) {
+                        return transformUser(window.netlifyIdentity.currentUser());
+                    }
+                    return null;
+                }
+            };
+        </script>
+    </body>
+</html>
+
+<style>
+    .hub-container {
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+        background-image: var(--background-image-noise);
+        background-size:
+            auto,
+            200px 200px;
+    }
+
+    .hub-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        max-width: 80rem;
+        margin-left: auto;
+        margin-right: auto;
+        flex-grow: 1;
+    }
+
+    .navigation-wrapper {
+        padding-top: 1rem;
+        padding-bottom: 2rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .main-content {
+        flex-grow: 1;
+        padding-bottom: 2rem;
+    }
+
+    @media (min-width: 640px) {
+        .hub-container {
+            padding-left: 3rem;
+            padding-right: 3rem;
+        }
+
+        .navigation-wrapper {
+            padding-bottom: 2.5rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .main-content {
+            padding-bottom: 3rem;
+        }
+    }
+</style>

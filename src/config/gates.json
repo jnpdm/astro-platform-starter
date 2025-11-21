@@ -1,0 +1,112 @@
+{
+    "gates": [
+        {
+            "id": "pre-contract",
+            "name": "Pre-Contract PDM Engagement",
+            "description": "Limited strategic technical support before contract signature",
+            "questionnaires": [
+                "pre-contract-pdm"
+            ],
+            "estimatedWeeks": "Ongoing",
+            "pdmHoursPerWeek": "10-15",
+            "criteria": [
+                "Executive Sponsorship Confirmed",
+                "Commercial Framework Alignment",
+                "Technical Questions Identified",
+                "60-Day Closure Timeline",
+                "Tier 0/1 Classification"
+            ]
+        },
+        {
+            "id": "gate-0",
+            "name": "Gate 0: Onboarding Kickoff",
+            "description": "Validates readiness for white-glove onboarding support",
+            "questionnaires": [
+                "gate-0-kickoff"
+            ],
+            "estimatedWeeks": "Prerequisite",
+            "criteria": [
+                "Contract Execution Complete",
+                "Partner Team Identified",
+                "Launch Within 12 Months",
+                "Financial Bar Met",
+                "Strategic Value Validated",
+                "Operational Readiness Confirmed"
+            ]
+        },
+        {
+            "id": "gate-1",
+            "name": "Gate 1: Ready to Sell",
+            "description": "Partner team trained and ready to sell Kuiper services",
+            "questionnaires": [
+                "gate-1-ready-to-sell"
+            ],
+            "phases": [
+                "1A",
+                "1B",
+                "1C"
+            ],
+            "estimatedWeeks": "Weeks 1-12",
+            "criteria": [
+                "Project plan approved",
+                "GTM strategy approved",
+                "Technical architecture defined",
+                "Sales team certified",
+                "Product knowledge validated",
+                "Portal access confirmed"
+            ]
+        },
+        {
+            "id": "gate-2",
+            "name": "Gate 2: Ready to Order",
+            "description": "Systems integrated and operational processes established",
+            "questionnaires": [
+                "gate-2-ready-to-order"
+            ],
+            "phases": [
+                "2A",
+                "2B"
+            ],
+            "estimatedWeeks": "Weeks 13-17",
+            "criteria": [
+                "API integration complete",
+                "Monitoring active",
+                "Test transactions successful",
+                "Order management system configured",
+                "Support processes established"
+            ]
+        },
+        {
+            "id": "gate-3",
+            "name": "Gate 3: Ready to Deliver",
+            "description": "Operational readiness validated and launch approved",
+            "questionnaires": [
+                "gate-3-ready-to-deliver"
+            ],
+            "phases": [
+                "3A",
+                "3B"
+            ],
+            "estimatedWeeks": "Weeks 18-20",
+            "criteria": [
+                "Beta testing successful",
+                "Support transition complete",
+                "Operational metrics validated",
+                "Launch plan approved",
+                "Go-live checklist complete"
+            ]
+        },
+        {
+            "id": "post-launch",
+            "name": "Post-Launch Operations",
+            "description": "Ongoing partner support and optimization",
+            "questionnaires": [],
+            "estimatedWeeks": "Ongoing",
+            "criteria": [
+                "Launch complete",
+                "Operational handoff to TAM",
+                "Performance monitoring active"
+            ]
+        }
+    ]
+}

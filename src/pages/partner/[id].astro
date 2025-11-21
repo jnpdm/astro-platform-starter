@@ -1,0 +1,488 @@
+---
+/**
+ * Partner Detail Page
+ * Displays comprehensive information about a single partner including:
+ * - Partner information (name, team assignments, contract details, timeline)
+ * - Gate progression timeline with status indicators
+ * - Completed and pending questionnaires for each gate
+ * - Gate approval signatures and dates
+ */
+
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import { getPartner, listSubmissionsByPartner } from '../../utils/storage';
+import { canAccessPartner, canEditPartner } from '../../utils/rbac';
+import { getUserSession } from '../../middleware/auth';
+import type { PartnerRecord, GateId } from '../../types/partner';
+import type { QuestionnaireSubmission } from '../../types/submission';
+import gatesConfig from '../../config/gates.json';
+
+const { id } = Astro.params;
+
+if (!id) {
+    return Astro.redirect('/');
+}
+
+// Get current user
+const currentUser = getUserSession();
+
+// Fetch partner data
+let partner: PartnerRecord | null = null;
+let submissions: QuestionnaireSubmission[] = [];
+let error: string | null = null;
+
+try {
+    partner = await getPartner(id);
+
+    if (!partner) {
+        return Astro.redirect('/?error=partner-not-found');
+    }
+
+    // Check access control
+    if (!canAccessPartner(currentUser, partner)) {
+        return Astro.redirect('/?error=access-denied');
+    }
+
+    // Fetch all submissions for this partner
+    submissions = await listSubmissionsByPartner(id);
+} catch (e) {
+    console.error('Failed to load partner data:', e);
+    error = 'Failed to load partner data. Please try again later.';
+}
+
+// Check if user can edit this partner
+const canEdit = partner ? canEditPartner(currentUser, partner) : false;
+
+// Gate order for timeline display
+const gateOrder: GateId[] = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
+
+// Helper function to get status badge color
+function getStatusColor(status: string): string {
+    switch (status) {
+        case 'passed':
+            return 'bg-green-600 text-white';
+        case 'in-progress':
+            return 'bg-yellow-600 text-white';
+        case 'failed':
+            return 'bg-red-600 text-white';
+        case 'blocked':
+            return 'bg-orange-600 text-white';
+        default:
+            return 'bg-gray-600 text-white';
+    }
+}
+
+// Helper function to get status icon
+function getStatusIcon(status: string): string {
+    switch (status) {
+        case 'passed':
+            return '✓';
+        case 'in-progress':
+            return '⟳';
+        case 'failed':
+            return '✗';
+        case 'blocked':
+            return '⚠';
+        default:
+            return '○';
+    }
+}
+
+// Helper function to format date
+function formatDate(date: Date | string | undefined): string {
+    if (!date) return 'Not set';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+// Helper function to format currency
+function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
+// Group submissions by questionnaire
+const submissionsByQuestionnaire = submissions.reduce(
+    (acc, submission) => {
+        if (!acc[submission.questionnaireId]) {
+            acc[submission.questionnaireId] = [];
+        }
+        acc[submission.questionnaireId].push(submission);
+        return acc;
+    },
+    {} as Record<string, QuestionnaireSubmission[]>
+);
+---
+
+<Layout title={partner ? `${partner.partnerName} - Partner Details` : 'Partner Details'}>
+    {
+        error ? (
+            <div class="py-8">
+                <div class="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded mb-6">{error}</div>
+                <a href="/" class="text-blue-400 hover:text-blue-300">
+                    ← Back to Dashboard
+                </a>
+            </div>
+        ) : partner ? (
+            <div class="py-8">
+                <!-- Header with Back Button -->
+                <div class="mb-6">
+                    <a href="/" class="text-blue-400 hover:text-blue-300 text-sm mb-4 inline-block">
+                        ← Back to Dashboard
+                    </a>
+                    <h1 class="text-4xl font-bold mb-2">{partner.partnerName}</h1>
+                    <div class="flex items-center gap-3 text-gray-300">
+                        <span class="px-3 py-1 bg-gray-700 rounded-full text-sm font-medium uppercase">{partner.tier}</span>
+                        <span class={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(partner.gates?.[partner.currentGate]?.status || 'not-started')}`}>
+                            {partner.currentGate.replace('-', ' ').toUpperCase()}
+                        </span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Main Content -->
+                    <div class="lg:col-span-2 space-y-8">
+                        <!-- Partner Information -->
+                        <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h2 class="text-2xl font-bold mb-4">Partner Information</h2>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <!-- Team Assignments -->
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Team Assignments</h3>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">PAM Owner:</span>
+                                            <span class="font-medium">{partner.pamOwner}</span>
+                                        </div>
+                                        {partner.pdmOwner && (
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">PDM Owner:</span>
+                                                <span class="font-medium">{partner.pdmOwner}</span>
+                                            </div>
+                                        )}
+                                        {partner.tpmOwner && (
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">TPM Owner:</span>
+                                                <span class="font-medium">{partner.tpmOwner}</span>
+                                            </div>
+                                        )}
+                                        {partner.psmOwner && (
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">PSM Owner:</span>
+                                                <span class="font-medium">{partner.psmOwner}</span>
+                                            </div>
+                                        )}
+                                        {partner.tamOwner && (
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">TAM Owner:</span>
+                                                <span class="font-medium">{partner.tamOwner}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <!-- Contract Details -->
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Contract Details</h3>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Contract Type:</span>
+                                            <span class="font-medium">{partner.contractType}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Signed Date:</span>
+                                            <span class="font-medium">{formatDate(partner.contractSignedDate)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">CCV:</span>
+                                            <span class="font-medium">{formatCurrency(partner.ccv)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">LRP:</span>
+                                            <span class="font-medium">{formatCurrency(partner.lrp)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Timeline -->
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Timeline</h3>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Onboarding Start:</span>
+                                            <span class="font-medium">{formatDate(partner.onboardingStartDate)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Target Launch:</span>
+                                            <span class="font-medium">{formatDate(partner.targetLaunchDate)}</span>
+                                        </div>
+                                        {partner.actualLaunchDate && (
+                                            <div class="flex justify-between">
+                                                <span class="text-gray-400">Actual Launch:</span>
+                                                <span class="font-medium">{formatDate(partner.actualLaunchDate)}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <!-- Metadata -->
+                                <div>
+                                    <h3 class="text-sm font-semibold text-gray-400 mb-3">Record Info</h3>
+                                    <div class="space-y-2">
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Created:</span>
+                                            <span class="font-medium">{formatDate(partner.createdAt)}</span>
+                                        </div>
+                                        <div class="flex justify-between">
+                                            <span class="text-gray-400">Last Updated:</span>
+                                            <span class="font-medium">{formatDate(partner.updatedAt)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Gate Progression Timeline -->
+                        <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h2 class="text-2xl font-bold mb-6">Gate Progression Timeline</h2>
+
+                            <div class="space-y-6">
+                                {gateOrder.map((gateId, index) => {
+                                    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+                                    const gateProgress = partner.gates?.[gateId];
+                                    const status = gateProgress?.status || 'not-started';
+                                    const isCurrentGate = partner.currentGate === gateId;
+
+                                    return (
+                                        <div class="relative">
+                                            {/* Timeline connector line */}
+                                            {index < gateOrder.length - 1 && (
+                                                <div class="absolute left-6 top-12 bottom-0 w-0.5 bg-gray-700" />
+                                            )}
+
+                                            <div class={`relative flex gap-4 ${isCurrentGate ? 'ring-2 ring-blue-500 rounded-lg p-4 -m-4' : ''}`}>
+                                                {/* Status Icon */}
+                                                <div class={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center text-xl font-bold ${getStatusColor(status)}`}>
+                                                    {getStatusIcon(status)}
+                                                </div>
+
+                                                {/* Gate Details */}
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="flex items-start justify-between mb-2">
+                                                        <div>
+                                                            <h3 class="text-lg font-semibold">{gateInfo?.name || gateId}</h3>
+                                                            <p class="text-sm text-gray-400">{gateInfo?.description}</p>
+                                                        </div>
+                                                        {isCurrentGate && (
+                                                            <span class="px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded">
+                                                                CURRENT
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Gate Metadata */}
+                                                    <div class="flex flex-wrap gap-4 text-sm text-gray-400 mb-3">
+                                                        <span>Timeline: {gateInfo?.estimatedWeeks}</span>
+                                                        {gateInfo?.pdmHoursPerWeek && <span>PDM Hours: {gateInfo.pdmHoursPerWeek}/week</span>}
+                                                    </div>
+
+                                                    {/* Gate Progress Details */}
+                                                    {gateProgress && (
+                                                        <div class="bg-gray-900/50 rounded-lg p-4 space-y-3">
+                                                            {gateProgress.startedDate && (
+                                                                <div class="flex justify-between text-sm">
+                                                                    <span class="text-gray-400">Started:</span>
+                                                                    <span>{formatDate(gateProgress.startedDate)}</span>
+                                                                </div>
+                                                            )}
+                                                            {gateProgress.completedDate && (
+                                                                <div class="flex justify-between text-sm">
+                                                                    <span class="text-gray-400">Completed:</span>
+                                                                    <span>{formatDate(gateProgress.completedDate)}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Questionnaires */}
+                                                            {gateInfo?.questionnaires && gateInfo.questionnaires.length > 0 && (
+                                                                <div>
+                                                                    <div class="text-sm font-semibold text-gray-400 mb-2">Questionnaires:</div>
+                                                                    <div class="space-y-2">
+                                                                        {gateInfo.questionnaires.map((qId) => {
+                                                                            const submissionId = gateProgress.questionnaires?.[qId];
+                                                                            const submission = submissions.find((s) => s.id === submissionId);
+
+                                                                            return (
+                                                                                <div class="flex items-center justify-between text-sm">
+                                                                                    <span class="text-gray-300">{qId}</span>
+                                                                                    {submission ? (
+                                                                                        <span class={`px-2 py-1 rounded text-xs font-medium ${submission.overallStatus === 'pass' ? 'bg-green-600' : submission.overallStatus === 'fail' ? 'bg-red-600' : 'bg-yellow-600'}`}>
+                                                                                            {submission.overallStatus.toUpperCase()}
+                                                                                        </span>
+                                                                                    ) : (
+                                                                                        <span class="text-gray-500 text-xs">Pending</span>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Approvals */}
+                                                            {gateProgress.approvals && gateProgress.approvals.length > 0 && (
+                                                                <div>
+                                                                    <div class="text-sm font-semibold text-gray-400 mb-2">Approvals:</div>
+                                                                    <div class="space-y-2">
+                                                                        {gateProgress.approvals.map((approval) => (
+                                                                            <div class="bg-gray-800/50 rounded p-3">
+                                                                                <div class="flex items-start justify-between mb-2">
+                                                                                    <div>
+                                                                                        <div class="font-medium text-sm">{approval.approvedBy}</div>
+                                                                                        <div class="text-xs text-gray-400">{approval.approvedByRole}</div>
+                                                                                    </div>
+                                                                                    <div class="text-xs text-gray-400">{formatDate(approval.approvedAt)}</div>
+                                                                                </div>
+                                                                                {approval.signature && (
+                                                                                    <div class="text-xs text-gray-500 border-t border-gray-700 pt-2 mt-2">
+                                                                                        Signature: {approval.signature.type === 'typed' ? '✍️ Typed' : '🖊️ Drawn'}
+                                                                                    </div>
+                                                                                )}
+                                                                                {approval.notes && (
+                                                                                    <div class="text-xs text-gray-400 mt-2">
+                                                                                        Note: {approval.notes}
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
+                                                            {/* Blockers */}
+                                                            {gateProgress.blockers && gateProgress.blockers.length > 0 && (
+                                                                <div class="bg-orange-900/30 border border-orange-600 rounded p-3">
+                                                                    <div class="text-sm font-semibold text-orange-400 mb-2">⚠️ Blockers:</div>
+                                                                    <ul class="list-disc list-inside space-y-1 text-sm text-orange-300">
+                                                                        {gateProgress.blockers.map((blocker) => (
+                                                                            <li>{blocker}</li>
+                                                                        ))}
+                                                                    </ul>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {/* Gate Criteria */}
+                                                    {gateInfo?.criteria && gateInfo.criteria.length > 0 && (
+                                                        <div class="mt-3">
+                                                            <details class="text-sm">
+                                                                <summary class="cursor-pointer text-gray-400 hover:text-gray-300">
+                                                                    View Gate Criteria ({gateInfo.criteria.length})
+                                                                </summary>
+                                                                <ul class="list-disc list-inside mt-2 space-y-1 text-gray-400 ml-4">
+                                                                    {gateInfo.criteria.map((criterion) => (
+                                                                        <li>{criterion}</li>
+                                                                    ))}
+                                                                </ul>
+                                                            </details>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Sidebar -->
+                    <div class="lg:col-span-1 space-y-6">
+                        <!-- Quick Actions -->
+                        <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
+                            <div class="space-y-2">
+                                <a
+                                    href={`/api/partner/${partner.id}`}
+                                    class="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded transition-colors"
+                                >
+                                    Edit Partner
+                                </a>
+                                <a
+                                    href="/questionnaires/pre-contract-pdm"
+                                    class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-center rounded transition-colors"
+                                >
+                                    New Questionnaire
+                                </a>
+                            </div>
+                        </section>
+
+                        <!-- Submission History -->
+                        <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">Submission History</h3>
+                            {submissions.length === 0 ? (
+                                <p class="text-gray-400 text-sm">No submissions yet</p>
+                            ) : (
+                                <div class="space-y-3">
+                                    {submissions
+                                        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+                                        .slice(0, 5)
+                                        .map((submission) => (
+                                            <div class="bg-gray-900/50 rounded p-3">
+                                                <div class="flex items-start justify-between mb-1">
+                                                    <div class="text-sm font-medium">{submission.questionnaireId}</div>
+                                                    <span class={`px-2 py-0.5 rounded text-xs font-medium ${submission.overallStatus === 'pass' ? 'bg-green-600' : submission.overallStatus === 'fail' ? 'bg-red-600' : 'bg-yellow-600'}`}>
+                                                        {submission.overallStatus.toUpperCase()}
+                                                    </span>
+                                                </div>
+                                                <div class="text-xs text-gray-400">
+                                                    {formatDate(submission.submittedAt || submission.createdAt)}
+                                                </div>
+                                                <div class="text-xs text-gray-500 mt-1">
+                                                    By: {submission.submittedBy} ({submission.submittedByRole})
+                                                </div>
+                                            </div>
+                                        ))}
+                                    {submissions.length > 5 && (
+                                        <div class="text-xs text-gray-400 text-center pt-2">
+                                            +{submissions.length - 5} more submissions
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </section>
+
+                        <!-- Partner Stats -->
+                        <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                            <h3 class="text-lg font-bold mb-4">Statistics</h3>
+                            <div class="space-y-3">
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">Gates Completed</div>
+                                    <div class="text-2xl font-bold">
+                                        {Object.values(partner.gates || {}).filter((g) => g.status === 'passed').length} / {gateOrder.length}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">Total Submissions</div>
+                                    <div class="text-2xl font-bold">{submissions.length}</div>
+                                </div>
+                                <div>
+                                    <div class="text-sm text-gray-400 mb-1">Completion Rate</div>
+                                    <div class="text-2xl font-bold">
+                                        {Math.round((Object.values(partner.gates || {}).filter((g) => g.status === 'passed').length / gateOrder.length) * 100)}%
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        ) : null
+    }
+</Layout>

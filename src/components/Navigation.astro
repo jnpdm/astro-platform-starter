@@ -1,0 +1,150 @@
+---
+// Gate-based navigation menu for the Partner Onboarding Hub
+const currentPath = Astro.url.pathname;
+
+const navItems = [
+    { label: 'Dashboard', href: '/', icon: '📊' },
+    { label: 'Pre-Contract', href: '/questionnaires/pre-contract-pdm', icon: '📋' },
+    { label: 'Gate 0', href: '/questionnaires/gate-0-kickoff', icon: '🚀' },
+    { label: 'Gate 1', href: '/questionnaires/gate-1-ready-to-sell', icon: '💼' },
+    { label: 'Gate 2', href: '/questionnaires/gate-2-ready-to-order', icon: '🔧' },
+    { label: 'Gate 3', href: '/questionnaires/gate-3-ready-to-deliver', icon: '✅' },
+    { label: 'Documentation', href: '/documentation', icon: '📚' },
+    { label: 'Reports', href: '/reports', icon: '📈' }
+];
+
+const isActive = (href: string) => {
+    if (href === '/') {
+        return currentPath === '/';
+    }
+    return currentPath.startsWith(href);
+};
+---
+
+<nav class="gate-navigation" aria-label="Main navigation">
+    <ul class="nav-list">
+        {
+            navItems.map((item) => (
+                <li>
+                    <a
+                        href={item.href}
+                        class:list={['nav-item', { 'nav-item-active': isActive(item.href) }]}
+                        aria-current={isActive(item.href) ? 'page' : undefined}
+                    >
+                        <span class="nav-icon" aria-hidden="true">
+                            {item.icon}
+                        </span>
+                        <span class="nav-label">{item.label}</span>
+                    </a>
+                </li>
+            ))
+        }
+    </ul>
+</nav>
+
+<style>
+    .gate-navigation {
+        width: 100%;
+    }
+
+    .nav-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    .nav-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        font-weight: 500;
+        text-decoration: none;
+        color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(255, 255, 255, 0.05);
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+
+    .nav-item:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white;
+        opacity: 1;
+    }
+
+    .nav-item-active {
+        background-color: var(--color-primary);
+        color: var(--color-primary-content);
+        border-color: var(--color-primary);
+    }
+
+    .nav-item-active:hover {
+        background-color: var(--color-primary);
+        opacity: 0.9;
+    }
+
+    .nav-icon {
+        font-size: 1rem;
+        line-height: 1;
+    }
+
+    .nav-label {
+        white-space: nowrap;
+    }
+
+    /* Tablet and mobile optimizations */
+    @media (max-width: 1024px) {
+        .nav-list {
+            gap: 0.375rem;
+        }
+
+        .nav-item {
+            padding: 0.625rem 0.875rem;
+            font-size: 0.8125rem;
+            min-height: 44px; /* Touch-friendly target size */
+        }
+    }
+
+    @media (max-width: 640px) {
+        .nav-list {
+            gap: 0.25rem;
+            justify-content: center;
+        }
+
+        .nav-item {
+            padding: 0.5rem 0.625rem;
+            font-size: 0.75rem;
+            flex: 0 1 auto;
+        }
+
+        .nav-icon {
+            font-size: 0.875rem;
+        }
+
+        .nav-label {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Hide labels on very small screens, show icons only */
+    @media (max-width: 480px) {
+        .nav-label {
+            display: none;
+        }
+
+        .nav-item {
+            padding: 0.625rem;
+            min-width: 44px;
+            justify-content: center;
+        }
+
+        .nav-icon {
+            font-size: 1.125rem;
+        }
+    }
+</style>

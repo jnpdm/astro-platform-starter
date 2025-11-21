@@ -1,0 +1,504 @@
+{
+    "sections": [
+        {
+            "id": "pre-contract",
+            "title": "Pre-Contract Engagement",
+            "description": "Resources for pre-contract PDM engagement",
+            "gate": "pre-contract",
+            "relevantRoles": [
+                "PAM",
+                "PDM"
+            ],
+            "links": [
+                {
+                    "title": "Executive Sponsorship Validation Guide",
+                    "url": "/docs/exec-sponsorship",
+                    "type": "internal",
+                    "description": "How to validate executive commitment"
+                },
+                {
+                    "title": "Commercial Framework Assessment",
+                    "url": "/docs/commercial-framework",
+                    "type": "internal",
+                    "description": "Evaluating partnership structure and revenue model"
+                },
+                {
+                    "title": "Technical Feasibility Assessment Guide",
+                    "url": "/docs/technical-feasibility",
+                    "type": "internal",
+                    "description": "Identifying technical questions and operational requirements"
+                },
+                {
+                    "title": "Partner Tier Classification Guide",
+                    "url": "/docs/tier-classification",
+                    "type": "internal",
+                    "description": "Understanding Tier 0, 1, and 2 classifications"
+                },
+                {
+                    "title": "PDM Resource Allocation Guidelines",
+                    "url": "/docs/pdm-allocation",
+                    "type": "internal",
+                    "description": "How PDM hours are allocated pre-contract"
+                }
+            ]
+        },
+        {
+            "id": "gate-0",
+            "title": "Gate 0: Onboarding Kickoff",
+            "description": "Resources for validating readiness for white-glove onboarding",
+            "gate": "gate-0",
+            "relevantRoles": [
+                "PAM",
+                "PDM"
+            ],
+            "links": [
+                {
+                    "title": "Gate 0 Overview",
+                    "url": "/docs/gate-0-overview",
+                    "type": "internal",
+                    "description": "Understanding Gate 0 requirements"
+                },
+                {
+                    "title": "White-Glove Onboarding Criteria",
+                    "url": "/docs/white-glove-criteria",
+                    "type": "internal",
+                    "description": "Financial and strategic criteria for white-glove support"
+                },
+                {
+                    "title": "Contract Execution Checklist",
+                    "url": "/docs/contract-execution",
+                    "type": "internal",
+                    "description": "Steps to verify contract completion"
+                },
+                {
+                    "title": "Partner Team Requirements",
+                    "url": "/docs/partner-team-requirements",
+                    "type": "internal",
+                    "description": "Required partner team roles and commitments"
+                },
+                {
+                    "title": "Financial Bar Criteria",
+                    "url": "/docs/financial-bar",
+                    "type": "internal",
+                    "description": "Understanding CCV thresholds and tier qualifications"
+                }
+            ]
+        },
+        {
+            "id": "gate-1-phase-1a",
+            "title": "Gate 1: Phase 1A - Onboarding Kickoff & Planning",
+            "description": "Resources for Phase 1A (Weeks 1-3)",
+            "gate": "gate-1",
+            "phase": "1A",
+            "relevantRoles": [
+                "PDM",
+                "PAM",
+                "TPM"
+            ],
+            "links": [
+                {
+                    "title": "Onboarding Kickoff Session Template",
+                    "url": "/docs/kickoff-template",
+                    "type": "internal",
+                    "description": "Template for conducting kickoff meetings"
+                },
+                {
+                    "title": "Launch Timeline Creation Guide",
+                    "url": "/docs/launch-timeline",
+                    "type": "internal",
+                    "description": "How to create a detailed launch timeline"
+                },
+                {
+                    "title": "Project Plan Template",
+                    "url": "/docs/project-plan-template",
+                    "type": "internal",
+                    "description": "Standard project plan structure"
+                }
+            ]
+        },
+        {
+            "id": "gate-1-phase-1b",
+            "title": "Gate 1: Phase 1B - GTM Strategy & Technical Discovery",
+            "description": "Resources for Phase 1B (Weeks 3-6)",
+            "gate": "gate-1",
+            "phase": "1B",
+            "relevantRoles": [
+                "PDM",
+                "TPM",
+                "PAM"
+            ],
+            "links": [
+                {
+                    "title": "GTM Strategy Framework",
+                    "url": "/docs/gtm-strategy",
+                    "type": "internal",
+                    "description": "Go-to-market strategy development guide"
+                },
+                {
+                    "title": "Technical Architecture Guide",
+                    "url": "/docs/technical-architecture",
+                    "type": "internal",
+                    "description": "Defining technical architecture and integration points"
+                },
+                {
+                    "title": "API Documentation",
+                    "url": "/docs/api-documentation",
+                    "type": "internal",
+                    "description": "Kuiper API reference and integration guide"
+                },
+                {
+                    "title": "Technical Discovery Checklist",
+                    "url": "/docs/technical-discovery",
+                    "type": "internal",
+                    "description": "Questions and requirements for technical discovery"
+                }
+            ]
+        },
+        {
+            "id": "gate-1-phase-1c",
+            "title": "Gate 1: Phase 1C - Training & Enablement",
+            "description": "Resources for Phase 1C (Weeks 7-12)",
+            "gate": "gate-1",
+            "phase": "1C",
+            "relevantRoles": [
+                "PDM",
+                "PAM"
+            ],
+            "links": [
+                {
+                    "title": "Sales Training Curriculum",
+                    "url": "/docs/sales-training",
+                    "type": "internal",
+                    "description": "Complete sales team training program"
+                },
+                {
+                    "title": "Product Knowledge Certification",
+                    "url": "/docs/product-certification",
+                    "type": "internal",
+                    "description": "Product knowledge assessment and certification"
+                },
+                {
+                    "title": "Partner Portal Access Guide",
+                    "url": "/docs/portal-access",
+                    "type": "internal",
+                    "description": "Setting up and using the partner portal"
+                },
+                {
+                    "title": "Sales Enablement Materials",
+                    "url": "/docs/sales-enablement",
+                    "type": "internal",
+                    "description": "Collateral, presentations, and sales tools"
+                }
+            ]
+        },
+        {
+            "id": "gate-2-phase-2a",
+            "title": "Gate 2: Phase 2A - Systems Integration & API Implementation",
+            "description": "Resources for Phase 2A (Weeks 13-17)",
+            "gate": "gate-2",
+            "phase": "2A",
+            "relevantRoles": [
+                "TPM",
+                "PDM"
+            ],
+            "links": [
+                {
+                    "title": "API Integration Guide",
+                    "url": "/docs/api-integration",
+                    "type": "internal",
+                    "description": "Step-by-step API integration instructions"
+                },
+                {
+                    "title": "Authentication & Security",
+                    "url": "/docs/api-security",
+                    "type": "internal",
+                    "description": "API authentication and security best practices"
+                },
+                {
+                    "title": "Testing & Validation",
+                    "url": "/docs/api-testing",
+                    "type": "internal",
+                    "description": "API testing procedures and test cases"
+                },
+                {
+                    "title": "Monitoring Setup Guide",
+                    "url": "/docs/monitoring-setup",
+                    "type": "internal",
+                    "description": "Setting up monitoring and alerting"
+                },
+                {
+                    "title": "Error Handling Best Practices",
+                    "url": "/docs/error-handling",
+                    "type": "internal",
+                    "description": "Handling API errors and edge cases"
+                }
+            ]
+        },
+        {
+            "id": "gate-2-phase-2b",
+            "title": "Gate 2: Phase 2B - Operational Process Setup",
+            "description": "Resources for Phase 2B (Weeks 13-17)",
+            "gate": "gate-2",
+            "phase": "2B",
+            "relevantRoles": [
+                "TPM",
+                "PSM"
+            ],
+            "links": [
+                {
+                    "title": "Order Management Process",
+                    "url": "/docs/order-management",
+                    "type": "internal",
+                    "description": "Setting up order management workflows"
+                },
+                {
+                    "title": "Support Process Templates",
+                    "url": "/docs/support-processes",
+                    "type": "internal",
+                    "description": "Customer support process documentation"
+                },
+                {
+                    "title": "SLA Requirements",
+                    "url": "/docs/sla-requirements",
+                    "type": "internal",
+                    "description": "Service level agreement requirements"
+                },
+                {
+                    "title": "Operational Runbooks",
+                    "url": "/docs/operational-runbooks",
+                    "type": "internal",
+                    "description": "Standard operating procedures"
+                }
+            ]
+        },
+        {
+            "id": "gate-3-phase-3a",
+            "title": "Gate 3: Phase 3A - Operational Readiness",
+            "description": "Resources for Phase 3A (Weeks 18-19)",
+            "gate": "gate-3",
+            "phase": "3A",
+            "relevantRoles": [
+                "PSM",
+                "TAM",
+                "TPM"
+            ],
+            "links": [
+                {
+                    "title": "Beta Testing Guide",
+                    "url": "/docs/beta-testing",
+                    "type": "internal",
+                    "description": "Conducting beta testing with real customers"
+                },
+                {
+                    "title": "Support Transition Checklist",
+                    "url": "/docs/support-transition",
+                    "type": "internal",
+                    "description": "Transitioning from onboarding to ongoing support"
+                },
+                {
+                    "title": "Operational Metrics Dashboard",
+                    "url": "/docs/operational-metrics",
+                    "type": "internal",
+                    "description": "Key metrics to monitor post-launch"
+                },
+                {
+                    "title": "Incident Response Procedures",
+                    "url": "/docs/incident-response",
+                    "type": "internal",
+                    "description": "Handling incidents and escalations"
+                }
+            ]
+        },
+        {
+            "id": "gate-3-phase-3b",
+            "title": "Gate 3: Phase 3B - Launch Validation",
+            "description": "Resources for Phase 3B (Week 20)",
+            "gate": "gate-3",
+            "phase": "3B",
+            "relevantRoles": [
+                "PSM",
+                "TAM",
+                "PAM"
+            ],
+            "links": [
+                {
+                    "title": "Launch Readiness Checklist",
+                    "url": "/docs/launch-checklist",
+                    "type": "internal",
+                    "description": "Final checklist before go-live"
+                },
+                {
+                    "title": "Go-Live Procedures",
+                    "url": "/docs/go-live-procedures",
+                    "type": "internal",
+                    "description": "Step-by-step launch procedures"
+                },
+                {
+                    "title": "Launch Communication Plan",
+                    "url": "/docs/launch-communications",
+                    "type": "internal",
+                    "description": "Internal and external launch communications"
+                },
+                {
+                    "title": "Post-Launch Monitoring",
+                    "url": "/docs/post-launch-monitoring",
+                    "type": "internal",
+                    "description": "Monitoring and support in first 30 days"
+                }
+            ]
+        },
+        {
+            "id": "post-launch",
+            "title": "Post-Launch Operations",
+            "description": "Resources for ongoing partner operations and optimization",
+            "gate": "post-launch",
+            "relevantRoles": [
+                "TAM",
+                "PSM"
+            ],
+            "links": [
+                {
+                    "title": "Ongoing Operations Guide",
+                    "url": "/docs/ongoing-operations",
+                    "type": "internal",
+                    "description": "Managing day-to-day partner operations"
+                },
+                {
+                    "title": "Performance Optimization",
+                    "url": "/docs/performance-optimization",
+                    "type": "internal",
+                    "description": "Optimizing partner performance and revenue"
+                },
+                {
+                    "title": "Quarterly Business Reviews",
+                    "url": "/docs/quarterly-reviews",
+                    "type": "internal",
+                    "description": "Conducting QBRs with partners"
+                },
+                {
+                    "title": "Expansion Opportunities",
+                    "url": "/docs/expansion-opportunities",
+                    "type": "internal",
+                    "description": "Identifying growth and expansion opportunities"
+                }
+            ]
+        },
+        {
+            "id": "role-pam",
+            "title": "PAM Role-Specific Resources",
+            "description": "Resources specifically for Partner Account Managers",
+            "gate": "all",
+            "relevantRoles": [
+                "PAM"
+            ],
+            "links": [
+                {
+                    "title": "PAM Playbook",
+                    "url": "/docs/pam-playbook",
+                    "type": "internal",
+                    "description": "Complete guide for PAM responsibilities"
+                },
+                {
+                    "title": "Partner Relationship Management",
+                    "url": "/docs/partner-relationship",
+                    "type": "internal",
+                    "description": "Building and maintaining partner relationships"
+                },
+                {
+                    "title": "Revenue Forecasting",
+                    "url": "/docs/revenue-forecasting",
+                    "type": "internal",
+                    "description": "Partner revenue forecasting methods"
+                }
+            ]
+        },
+        {
+            "id": "role-pdm",
+            "title": "PDM Role-Specific Resources",
+            "description": "Resources specifically for Partner Development Managers",
+            "gate": "all",
+            "relevantRoles": [
+                "PDM"
+            ],
+            "links": [
+                {
+                    "title": "PDM Playbook",
+                    "url": "/docs/pdm-playbook",
+                    "type": "internal",
+                    "description": "Complete guide for PDM responsibilities"
+                },
+                {
+                    "title": "Onboarding Best Practices",
+                    "url": "/docs/onboarding-best-practices",
+                    "type": "internal",
+                    "description": "Proven onboarding strategies and tactics"
+                },
+                {
+                    "title": "Capacity Management",
+                    "url": "/docs/capacity-management",
+                    "type": "internal",
+                    "description": "Managing 6-8 concurrent partner onboardings"
+                }
+            ]
+        },
+        {
+            "id": "role-tpm",
+            "title": "TPM Role-Specific Resources",
+            "description": "Resources specifically for Technical Program Managers",
+            "gate": "all",
+            "relevantRoles": [
+                "TPM"
+            ],
+            "links": [
+                {
+                    "title": "TPM Playbook",
+                    "url": "/docs/tpm-playbook",
+                    "type": "internal",
+                    "description": "Complete guide for TPM responsibilities"
+                },
+                {
+                    "title": "Integration Project Management",
+                    "url": "/docs/integration-pm",
+                    "type": "internal",
+                    "description": "Managing technical integration projects"
+                },
+                {
+                    "title": "Technical Troubleshooting",
+                    "url": "/docs/technical-troubleshooting",
+                    "type": "internal",
+                    "description": "Common integration issues and solutions"
+                }
+            ]
+        },
+        {
+            "id": "role-psm-tam",
+            "title": "PSM/TAM Role-Specific Resources",
+            "description": "Resources for Partner Success Managers and Technical Account Managers",
+            "gate": "all",
+            "relevantRoles": [
+                "PSM",
+                "TAM"
+            ],
+            "links": [
+                {
+                    "title": "PSM/TAM Playbook",
+                    "url": "/docs/psm-tam-playbook",
+                    "type": "internal",
+                    "description": "Complete guide for PSM and TAM responsibilities"
+                },
+                {
+                    "title": "Customer Success Strategies",
+                    "url": "/docs/customer-success",
+                    "type": "internal",
+                    "description": "Ensuring partner and end-customer success"
+                },
+                {
+                    "title": "Escalation Management",
+                    "url": "/docs/escalation-management",
+                    "type": "internal",
+                    "description": "Handling partner escalations effectively"
+                }
+            ]
+        }
+    ]
+}

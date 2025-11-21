@@ -1,0 +1,391 @@
+{
+    "id": "gate-3-ready-to-deliver",
+    "version": "1.0.0",
+    "metadata": {
+        "name": "Gate 3: Ready to Deliver",
+        "description": "Validates operational readiness and launch validation. Partner is ready to deliver Kuiper services to customers.",
+        "gate": "gate-3",
+        "estimatedTime": 40,
+        "requiredRoles": [
+            "PSM",
+            "TAM",
+            "TPM"
+        ],
+        "primaryRole": "PSM",
+        "icon": "rocket"
+    },
+    "gateCriteria": [
+        "Beta testing successful",
+        "Support transition complete",
+        "Operational metrics validated",
+        "Launch readiness confirmed",
+        "Customer onboarding process validated",
+        "Go-live approval obtained"
+    ],
+    "sections": [
+        {
+            "id": "phase-3a-operational-readiness",
+            "title": "Phase 3A: Operational Readiness (Weeks 18-19)",
+            "description": "Beta testing, support transition, and operational validation",
+            "fields": [
+                {
+                    "id": "beta-testing-complete",
+                    "type": "radio",
+                    "label": "Has beta testing been completed successfully?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "beta-testing-end-date",
+                    "type": "date",
+                    "label": "Beta Testing Completion Date",
+                    "required": true
+                },
+                {
+                    "id": "beta-customers-count",
+                    "type": "number",
+                    "label": "Number of beta customers",
+                    "required": true,
+                    "helpText": "Total number of customers who participated in beta testing"
+                },
+                {
+                    "id": "beta-feedback-positive",
+                    "type": "radio",
+                    "label": "Was beta customer feedback predominantly positive?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "critical-issues-resolved",
+                    "type": "radio",
+                    "label": "Have all critical issues from beta testing been resolved?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-transition-complete",
+                    "type": "radio",
+                    "label": "Has support transition been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-team-ready",
+                    "type": "radio",
+                    "label": "Is the support team ready to handle customer inquiries?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-documentation-complete",
+                    "type": "radio",
+                    "label": "Is support documentation complete and accessible?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "operational-metrics-validated",
+                    "type": "radio",
+                    "label": "Have operational metrics been validated?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "sla-targets-defined",
+                    "type": "radio",
+                    "label": "Have SLA targets been defined and agreed upon?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "monitoring-dashboards-operational",
+                    "type": "radio",
+                    "label": "Are monitoring dashboards operational and showing accurate data?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "incident-response-tested",
+                    "type": "radio",
+                    "label": "Has the incident response process been tested?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-3a-notes",
+                    "type": "textarea",
+                    "label": "Phase 3A Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 3A"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "beta-testing-complete",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Beta testing must be completed successfully"
+                    },
+                    {
+                        "field": "critical-issues-resolved",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "All critical issues from beta testing must be resolved"
+                    },
+                    {
+                        "field": "support-transition-complete",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Support transition must be completed"
+                    },
+                    {
+                        "field": "operational-metrics-validated",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Operational metrics must be validated"
+                    },
+                    {
+                        "field": "monitoring-dashboards-operational",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Monitoring dashboards must be operational and showing accurate data"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Beta Testing Guide",
+                    "url": "/docs/beta-testing",
+                    "type": "internal"
+                },
+                {
+                    "title": "Support Transition Checklist",
+                    "url": "/docs/support-transition",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "phase-3b-launch-validation",
+            "title": "Phase 3B: Launch Validation (Week 20)",
+            "description": "Final launch readiness validation and go-live approval",
+            "fields": [
+                {
+                    "id": "launch-readiness-review-complete",
+                    "type": "radio",
+                    "label": "Has the launch readiness review been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "launch-readiness-review-date",
+                    "type": "date",
+                    "label": "Launch Readiness Review Date",
+                    "required": true
+                },
+                {
+                    "id": "stakeholder-approval-obtained",
+                    "type": "radio",
+                    "label": "Has stakeholder approval been obtained for launch?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "customer-onboarding-process-validated",
+                    "type": "radio",
+                    "label": "Has the customer onboarding process been validated?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "marketing-materials-ready",
+                    "type": "radio",
+                    "label": "Are marketing materials ready for launch?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "sales-team-briefed",
+                    "type": "radio",
+                    "label": "Has the sales team been briefed on launch details?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "launch-communication-plan-ready",
+                    "type": "radio",
+                    "label": "Is the launch communication plan ready?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "rollback-plan-documented",
+                    "type": "radio",
+                    "label": "Has a rollback plan been documented?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "go-live-date",
+                    "type": "date",
+                    "label": "Planned Go-Live Date",
+                    "required": true
+                },
+                {
+                    "id": "go-live-approval-obtained",
+                    "type": "radio",
+                    "label": "Has final go-live approval been obtained?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "post-launch-monitoring-plan",
+                    "type": "radio",
+                    "label": "Is a post-launch monitoring plan in place?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-3b-notes",
+                    "type": "textarea",
+                    "label": "Phase 3B Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 3B"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "launch-readiness-review-complete",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Launch readiness review must be completed"
+                    },
+                    {
+                        "field": "stakeholder-approval-obtained",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Stakeholder approval must be obtained for launch"
+                    },
+                    {
+                        "field": "customer-onboarding-process-validated",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Customer onboarding process must be validated"
+                    },
+                    {
+                        "field": "go-live-approval-obtained",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Final go-live approval must be obtained"
+                    },
+                    {
+                        "field": "rollback-plan-documented",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Rollback plan must be documented"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Launch Readiness Checklist",
+                    "url": "/docs/launch-readiness",
+                    "type": "internal"
+                },
+                {
+                    "title": "Go-Live Approval Process",
+                    "url": "/docs/go-live-approval",
+                    "type": "internal"
+                }
+            ]
+        }
+    ],
+    "validation": {
+        "requiredSections": [
+            "phase-3a-operational-readiness",
+            "phase-3b-launch-validation"
+        ],
+        "minimumPassingSections": 2,
+        "allowPartialSubmission": false,
+        "specialRules": [
+            {
+                "description": "Both phases must pass for Gate 3 completion",
+                "condition": "all-sections-pass",
+                "action": "require-all-passing"
+            }
+        ]
+    },
+    "documentation": [
+        {
+            "title": "Gate 3 Overview",
+            "url": "/docs/gate-3-overview",
+            "type": "internal"
+        },
+        {
+            "title": "Ready to Deliver Criteria",
+            "url": "/docs/ready-to-deliver-criteria",
+            "type": "internal"
+        }
+    ]
+}

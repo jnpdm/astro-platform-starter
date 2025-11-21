@@ -1,0 +1,31 @@
+---
+import QuestionnaireForm from '../../components/questionnaires/QuestionnaireForm';
+import type { QuestionnaireConfig } from '../../types/questionnaire';
+
+// Load the pre-contract PDM questionnaire config
+const preContractConfig: QuestionnaireConfig = await import('../../config/questionnaires/pre-contract-pdm.json').then((m) => m.default);
+
+const handleSubmit = async (data: any) => {
+    console.log('Form submitted:', data);
+    alert('Questionnaire submitted successfully!');
+};
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Questionnaire Form Demo</title>
+    </head>
+    <body class="bg-gray-50 min-h-screen py-8">
+        <div class="container mx-auto px-4">
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">QuestionnaireForm Component Demo</h1>
+                <p class="text-gray-600">This page demonstrates the QuestionnaireForm component with the Pre-Contract PDM Engagement questionnaire.</p>
+            </div>
+
+            <QuestionnaireForm client:load config={preContractConfig} mode="edit" onSubmit={handleSubmit} partnerId="demo-partner" />
+        </div>
+    </body>
+</html>

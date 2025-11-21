@@ -1,0 +1,914 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { listPartners, listSubmissionsByPartner } from '../utils/storage';
+import { filterPartnersByRole } from '../utils/rbac';
+import { getUserSession } from '../middleware/auth';
+import type { PartnerRecord, GateId, TierClassification } from '../types/partner';
+import type { QuestionnaireSubmission } from '../types/submission';
+import gatesConfig from '../config/gates.json';
+
+// Get current user from session
+const currentUser = getUserSession();
+
+// Fetch all partners
+let allPartners: PartnerRecord[] = [];
+let error: string | null = null;
+
+try {
+    allPartners = await listPartners();
+} catch (e) {
+    console.error('Failed to load partners:', e);
+    error = 'Failed to load partner data. Please try again later.';
+}
+
+// Get filter parameters from URL
+const url = new URL(Astro.request.url);
+const filterGate = url.searchParams.get('gate') as GateId | null;
+const filterTier = url.searchParams.get('tier') as TierClassification | null;
+const filterTeamMember = url.searchParams.get('teamMember');
+const filterDateFrom = url.searchParams.get('dateFrom');
+const filterDateTo = url.searchParams.get('dateTo');
+
+// Apply filters
+let filteredPartners = filterPartnersByRole(allPartners, currentUser);
+
+if (filterGate) {
+    filteredPartners = filteredPartners.filter((p) => p.currentGate === filterGate);
+}
+
+if (filterTier) {
+    filteredPartners = filteredPartners.filter((p) => p.tier === filterTier);
+}
+
+if (filterTeamMember) {
+    filteredPartners = filteredPartners.filter(
+        (p) =>
+            p.pamOwner === filterTeamMember ||
+            p.pdmOwner === filterTeamMember ||
+            p.tpmOwner === filterTeamMember ||
+            p.psmOwner === filterTeamMember ||
+            p.tamOwner === filterTeamMember
+    );
+}
+
+if (filterDateFrom) {
+    const fromDate = new Date(filterDateFrom);
+    filteredPartners = filteredPartners.filter((p) => {
+        if (!p.onboardingStartDate) return false;
+        return new Date(p.onboardingStartDate) >= fromDate;
+    });
+}
+
+if (filterDateTo) {
+    const toDate = new Date(filterDateTo);
+    filteredPartners = filteredPartners.filter((p) => {
+        if (!p.onboardingStartDate) return false;
+        return new Date(p.onboardingStartDate) <= toDate;
+    });
+}
+
+// Use filtered partners for calculations
+const partners = filteredPartners;
+
+// Gate order for calculations
+const gateOrder: GateId[] = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
+
+// Calculate summary statistics
+const totalPartners = partners.length;
+
+// Partners by gate
+const partnersByGate = gateOrder.map((gateId) => {
+    const count = partners.filter((p) => p.currentGate === gateId).length;
+    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+    return {
+        gateId,
+        name: gateInfo?.name || gateId,
+        count,
+        percentage: totalPartners > 0 ? Math.round((count / totalPartners) * 100) : 0
+    };
+});
+
+// Calculate average time per gate
+interface GateTimeStats {
+    gateId: string;
+    name: string;
+    avgDays: number | null;
+    completedCount: number;
+}
+
+const gateTimeStats: GateTimeStats[] = gateOrder.map((gateId) => {
+    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+    const completedGates = partners.map((p) => p.gates?.[gateId]).filter((gate) => gate?.status === 'passed' && gate?.startedDate && gate?.completedDate);
+
+    if (completedGates.length === 0) {
+        return {
+            gateId,
+            name: gateInfo?.name || gateId,
+            avgDays: null,
+            completedCount: 0
+        };
+    }
+
+    const totalDays = completedGates.reduce((sum, gate) => {
+        const start = new Date(gate!.startedDate!).getTime();
+        const end = new Date(gate!.completedDate!).getTime();
+        return sum + (end - start) / (1000 * 60 * 60 * 24);
+    }, 0);
+
+    return {
+        gateId,
+        name: gateInfo?.name || gateId,
+        avgDays: Math.round(totalDays / completedGates.length),
+        completedCount: completedGates.length
+    };
+});
+
+// Calculate gate pass/fail rates
+interface GatePassFailStats {
+    gateId: string;
+    name: string;
+    passed: number;
+    failed: number;
+    inProgress: number;
+    notStarted: number;
+    passRate: number;
+}
+
+const gatePassFailStats: GatePassFailStats[] = gateOrder.map((gateId) => {
+    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+    const gateStatuses = partners.map((p) => p.gates?.[gateId]?.status || 'not-started');
+
+    const passed = gateStatuses.filter((s) => s === 'passed').length;
+    const failed = gateStatuses.filter((s) => s === 'failed').length;
+    const inProgress = gateStatuses.filter((s) => s === 'in-progress').length;
+    const notStarted = gateStatuses.filter((s) => s === 'not-started').length;
+
+    const attempted = passed + failed;
+    const passRate = attempted > 0 ? Math.round((passed / attempted) * 100) : 0;
+
+    return {
+        gateId,
+        name: gateInfo?.name || gateId,
+        passed,
+        failed,
+        inProgress,
+        notStarted,
+        passRate
+    };
+});
+
+// PDM capacity utilization metrics
+const pdmPartners = partners.filter((p) => p.currentGate === 'pre-contract' || p.currentGate === 'gate-0' || p.currentGate === 'gate-1');
+
+// Get unique PDM owners
+const pdmOwners = [...new Set(pdmPartners.map((p) => p.pdmOwner).filter(Boolean))];
+const pdmCount = pdmOwners.length;
+
+// Calculate PDM load (assuming 10-15 hours per partner in pre-contract, full time for gates 0-1)
+const pdmLoad = pdmPartners.reduce((sum, p) => {
+    if (p.currentGate === 'pre-contract') return sum + 1; // 1 unit for pre-contract
+    return sum + 2; // 2 units for active gates
+}, 0);
+
+const avgPartnersPerPDM = pdmCount > 0 ? (pdmLoad / pdmCount).toFixed(1) : '0';
+const targetMin = 6;
+const targetMax = 8;
+const capacityUtilization = pdmCount > 0 ? Math.round((pdmLoad / (pdmCount * targetMax)) * 100) : 0;
+
+// Gate completion trends over time (last 6 months)
+const sixMonthsAgo = new Date();
+sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
+
+interface MonthlyTrend {
+    month: string;
+    completions: number;
+}
+
+const monthlyCompletions: MonthlyTrend[] = [];
+for (let i = 5; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const monthKey = date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+
+    const completions = partners.reduce((count, partner) => {
+        return (
+            count +
+            Object.values(partner.gates || {}).filter((gate: any) => {
+                if (!gate?.completedDate) return false;
+                const completedDate = new Date(gate.completedDate);
+                return completedDate.getMonth() === date.getMonth() && completedDate.getFullYear() === date.getFullYear();
+            }).length
+        );
+    }, 0);
+
+    monthlyCompletions.push({ month: monthKey, completions });
+}
+
+// Helper function to get color for capacity utilization
+function getCapacityColor(utilization: number): string {
+    if (utilization < 75) return 'text-yellow-400';
+    if (utilization > 125) return 'text-red-400';
+    return 'text-green-400';
+}
+
+// Helper function to get bar width percentage
+function getBarWidth(count: number, max: number): number {
+    return max > 0 ? Math.round((count / max) * 100) : 0;
+}
+
+const maxPartnersInGate = Math.max(...partnersByGate.map((g) => g.count), 1);
+const maxCompletions = Math.max(...monthlyCompletions.map((m) => m.completions), 1);
+
+// Calculate common failure reasons for each gate
+interface GateFailureAnalysis {
+    gateId: string;
+    name: string;
+    failureReasons: { reason: string; count: number }[];
+    totalFailures: number;
+}
+
+const gateFailureAnalysis: GateFailureAnalysis[] = await Promise.all(
+    gateOrder.map(async (gateId) => {
+        const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+        const failedPartners = partners.filter((p) => p.gates?.[gateId]?.status === 'failed');
+
+        const reasonCounts: Record<string, number> = {};
+
+        // Collect failure reasons from gate blockers
+        for (const partner of failedPartners) {
+            const gate = partner.gates?.[gateId];
+            if (gate?.blockers) {
+                for (const blocker of gate.blockers) {
+                    reasonCounts[blocker] = (reasonCounts[blocker] || 0) + 1;
+                }
+            }
+
+            // Also check questionnaire submissions for section failure reasons
+            const gateQuestionnaires = gate?.questionnaires || {};
+            for (const submissionId of Object.values(gateQuestionnaires)) {
+                try {
+                    const submission = await listSubmissionsByPartner(partner.id);
+                    const relevantSubmission = submission.find((s) => s.id === submissionId);
+
+                    if (relevantSubmission) {
+                        for (const section of relevantSubmission.sections) {
+                            if (section.status.result === 'fail' && section.status.failureReasons) {
+                                for (const reason of section.status.failureReasons) {
+                                    reasonCounts[reason] = (reasonCounts[reason] || 0) + 1;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error(`Failed to load submissions for partner ${partner.id}:`, e);
+                }
+            }
+        }
+
+        const failureReasons = Object.entries(reasonCounts)
+            .map(([reason, count]) => ({ reason, count }))
+            .sort((a, b) => b.count - a.count)
+            .slice(0, 5); // Top 5 reasons
+
+        return {
+            gateId,
+            name: gateInfo?.name || gateId,
+            failureReasons,
+            totalFailures: failedPartners.length
+        };
+    })
+);
+
+// Calculate partners at risk of missing launch dates
+interface AtRiskPartner {
+    id: string;
+    partnerName: string;
+    currentGate: GateId;
+    targetLaunchDate: Date;
+    daysUntilLaunch: number;
+    estimatedDaysRemaining: number;
+    riskLevel: 'high' | 'medium' | 'low';
+    pamOwner: string;
+}
+
+const atRiskPartners: AtRiskPartner[] = partners
+    .filter((p) => p.targetLaunchDate && p.currentGate !== 'post-launch')
+    .map((p) => {
+        const now = new Date();
+        const targetDate = new Date(p.targetLaunchDate!);
+        const daysUntilLaunch = Math.ceil((targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+        // Estimate remaining days based on current gate and average completion times
+        let estimatedDaysRemaining = 0;
+        const currentGateIndex = gateOrder.indexOf(p.currentGate);
+
+        for (let i = currentGateIndex; i < gateOrder.length - 1; i++) {
+            const gateId = gateOrder[i];
+            const gateStats = gateTimeStats.find((s) => s.gateId === gateId);
+
+            if (gateStats?.avgDays) {
+                estimatedDaysRemaining += gateStats.avgDays;
+            } else {
+                // Use default estimates if no data
+                const defaultDays: Record<GateId, number> = {
+                    'pre-contract': 30,
+                    'gate-0': 7,
+                    'gate-1': 84,
+                    'gate-2': 35,
+                    'gate-3': 14,
+                    'post-launch': 0
+                };
+                estimatedDaysRemaining += defaultDays[gateId] || 30;
+            }
+        }
+
+        const buffer = daysUntilLaunch - estimatedDaysRemaining;
+        let riskLevel: 'high' | 'medium' | 'low';
+
+        if (buffer < 0) {
+            riskLevel = 'high'; // Already behind schedule
+        } else if (buffer < 14) {
+            riskLevel = 'medium'; // Less than 2 weeks buffer
+        } else {
+            riskLevel = 'low'; // Adequate buffer
+        }
+
+        return {
+            id: p.id,
+            partnerName: p.partnerName,
+            currentGate: p.currentGate,
+            targetLaunchDate: targetDate,
+            daysUntilLaunch,
+            estimatedDaysRemaining,
+            riskLevel,
+            pamOwner: p.pamOwner
+        };
+    })
+    .filter((p) => p.riskLevel === 'high' || p.riskLevel === 'medium')
+    .sort((a, b) => {
+        // Sort by risk level first, then by days until launch
+        if (a.riskLevel !== b.riskLevel) {
+            return a.riskLevel === 'high' ? -1 : 1;
+        }
+        return a.daysUntilLaunch - b.daysUntilLaunch;
+    });
+
+// Get unique team members for filter dropdown
+const allTeamMembers = new Set<string>();
+allPartners.forEach((p) => {
+    if (p.pamOwner) allTeamMembers.add(p.pamOwner);
+    if (p.pdmOwner) allTeamMembers.add(p.pdmOwner);
+    if (p.tpmOwner) allTeamMembers.add(p.tpmOwner);
+    if (p.psmOwner) allTeamMembers.add(p.psmOwner);
+    if (p.tamOwner) allTeamMembers.add(p.tamOwner);
+});
+const teamMembers = Array.from(allTeamMembers).sort();
+---
+
+<Layout title="Reports & Analytics - Kuiper Partner Onboarding Hub">
+    <div class="py-8">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h1 class="text-4xl font-bold mb-2">Reports & Analytics</h1>
+                <p class="text-gray-300">Partner progress metrics and resource utilization</p>
+            </div>
+            <div class="flex gap-3">
+                <button id="export-partners-btn" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm font-medium">
+                    📊 Export Partners
+                </button>
+                <button id="export-metrics-btn" class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors text-sm font-medium">
+                    📈 Export Metrics
+                </button>
+                <a href="/" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"> ← Back to Dashboard </a>
+            </div>
+        </div>
+
+        {error && <div class="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded mb-6">{error}</div>}
+
+        <!-- Filters -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-xl font-bold mb-4">Filters</h2>
+            <form method="get" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div>
+                    <label for="gate" class="block text-sm font-medium text-gray-400 mb-2">Gate</label>
+                    <select
+                        id="gate"
+                        name="gate"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">All Gates</option>
+                        <option value="pre-contract" selected={filterGate === 'pre-contract'}>Pre-Contract</option>
+                        <option value="gate-0" selected={filterGate === 'gate-0'}>Gate 0</option>
+                        <option value="gate-1" selected={filterGate === 'gate-1'}>Gate 1</option>
+                        <option value="gate-2" selected={filterGate === 'gate-2'}>Gate 2</option>
+                        <option value="gate-3" selected={filterGate === 'gate-3'}>Gate 3</option>
+                        <option value="post-launch" selected={filterGate === 'post-launch'}>Post-Launch</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="tier" class="block text-sm font-medium text-gray-400 mb-2">Tier</label>
+                    <select
+                        id="tier"
+                        name="tier"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">All Tiers</option>
+                        <option value="tier-0" selected={filterTier === 'tier-0'}>Tier 0</option>
+                        <option value="tier-1" selected={filterTier === 'tier-1'}>Tier 1</option>
+                        <option value="tier-2" selected={filterTier === 'tier-2'}>Tier 2</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="teamMember" class="block text-sm font-medium text-gray-400 mb-2">Team Member</label>
+                    <select
+                        id="teamMember"
+                        name="teamMember"
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                        <option value="">All Team Members</option>
+                        {
+                            teamMembers.map((member) => (
+                                <option value={member} selected={filterTeamMember === member}>
+                                    {member}
+                                </option>
+                            ))
+                        }
+                    </select>
+                </div>
+
+                <div>
+                    <label for="dateFrom" class="block text-sm font-medium text-gray-400 mb-2">Start Date</label>
+                    <input
+                        type="date"
+                        id="dateFrom"
+                        name="dateFrom"
+                        value={filterDateFrom || ''}
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+
+                <div>
+                    <label for="dateTo" class="block text-sm font-medium text-gray-400 mb-2">End Date</label>
+                    <input
+                        type="date"
+                        id="dateTo"
+                        name="dateTo"
+                        value={filterDateTo || ''}
+                        class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                </div>
+
+                <div class="md:col-span-2 lg:col-span-5 flex gap-3">
+                    <button type="submit" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors text-sm font-medium">
+                        Apply Filters
+                    </button>
+                    <a href="/reports" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"> Clear Filters </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- Summary Statistics -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Total Partners</div>
+                <div class="text-3xl font-bold">{totalPartners}</div>
+            </div>
+
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Active Gates</div>
+                <div class="text-3xl font-bold text-blue-400">
+                    {partners.filter((p) => p.currentGate !== 'post-launch').length}
+                </div>
+            </div>
+
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Completed Launches</div>
+                <div class="text-3xl font-bold text-green-400">
+                    {partners.filter((p) => p.currentGate === 'post-launch').length}
+                </div>
+            </div>
+
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="text-gray-400 text-sm font-medium mb-1">Avg. Time to Launch</div>
+                <div class="text-3xl font-bold text-purple-400">
+                    {
+                        (() => {
+                            const launchedPartners = partners.filter((p) => p.onboardingStartDate && p.actualLaunchDate);
+                            if (launchedPartners.length === 0) return 'N/A';
+
+                            const totalDays = launchedPartners.reduce((sum, p) => {
+                                const start = new Date(p.onboardingStartDate!).getTime();
+                                const end = new Date(p.actualLaunchDate!).getTime();
+                                return sum + (end - start) / (1000 * 60 * 60 * 24);
+                            }, 0);
+
+                            return Math.round(totalDays / launchedPartners.length) + 'd';
+                        })()
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Partner Distribution Chart -->
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <h2 class="text-2xl font-bold mb-6">Partner Distribution Across Gates</h2>
+
+                <div class="space-y-4">
+                    {
+                        partnersByGate.map((gate) => (
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-300">{gate.name}</span>
+                                    <span class="text-sm text-gray-400">
+                                        {gate.count} ({gate.percentage}%)
+                                    </span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                                    <div
+                                        class="bg-blue-500 h-3 rounded-full transition-all duration-500"
+                                        style={`width: ${getBarWidth(gate.count, maxPartnersInGate)}%`}
+                                    />
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {totalPartners === 0 && <div class="text-center text-gray-400 py-8">No partner data available</div>}
+            </div>
+
+            <!-- Gate Completion Trends -->
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <h2 class="text-2xl font-bold mb-6">Gate Completion Trends</h2>
+                <p class="text-sm text-gray-400 mb-6">Last 6 months</p>
+
+                <div class="space-y-4">
+                    {
+                        monthlyCompletions.map((trend) => (
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <span class="text-sm font-medium text-gray-300">{trend.month}</span>
+                                    <span class="text-sm text-gray-400">{trend.completions} completions</span>
+                                </div>
+                                <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                                    <div
+                                        class="bg-green-500 h-3 rounded-full transition-all duration-500"
+                                        style={`width: ${getBarWidth(trend.completions, maxCompletions)}%`}
+                                    />
+                                </div>
+                            </div>
+                        ))
+                    }
+                </div>
+
+                {monthlyCompletions.every((m) => m.completions === 0) && <div class="text-center text-gray-400 py-8">No completions in the last 6 months</div>}
+            </div>
+        </div>
+
+        <!-- Average Time Per Gate -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Average Time Per Gate</h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Gate</th>
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Estimated Duration</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Avg. Actual Days</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Completed Count</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {
+                            gateTimeStats.map((stat) => {
+                                const gateInfo = gatesConfig.gates.find((g) => g.id === stat.gateId);
+                                return (
+                                    <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                        <td class="py-3 px-4 text-sm font-medium">{stat.name}</td>
+                                        <td class="py-3 px-4 text-sm text-gray-400">{gateInfo?.estimatedWeeks || 'N/A'}</td>
+                                        <td class="py-3 px-4 text-sm text-right">
+                                            {stat.avgDays !== null ? (
+                                                <span class="font-semibold">{stat.avgDays} days</span>
+                                            ) : (
+                                                <span class="text-gray-500">N/A</span>
+                                            )}
+                                        </td>
+                                        <td class="py-3 px-4 text-sm text-right text-gray-400">{stat.completedCount}</td>
+                                    </tr>
+                                );
+                            })
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            {gateTimeStats.every((s) => s.completedCount === 0) && <div class="text-center text-gray-400 py-8">No completed gates to analyze</div>}
+        </div>
+
+        <!-- Gate Pass/Fail Rates -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Gate Pass/Fail Rates</h2>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead>
+                        <tr class="border-b border-gray-700">
+                            <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Gate</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Passed</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Failed</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">In Progress</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Not Started</th>
+                            <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Pass Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {
+                            gatePassFailStats.map((stat) => (
+                                <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                    <td class="py-3 px-4 text-sm font-medium">{stat.name}</td>
+                                    <td class="py-3 px-4 text-sm text-right text-green-400">{stat.passed}</td>
+                                    <td class="py-3 px-4 text-sm text-right text-red-400">{stat.failed}</td>
+                                    <td class="py-3 px-4 text-sm text-right text-yellow-400">{stat.inProgress}</td>
+                                    <td class="py-3 px-4 text-sm text-right text-gray-500">{stat.notStarted}</td>
+                                    <td class="py-3 px-4 text-sm text-right">
+                                        {stat.passed + stat.failed > 0 ? (
+                                            <span
+                                                class={
+                                                    stat.passRate >= 80
+                                                        ? 'text-green-400 font-semibold'
+                                                        : stat.passRate >= 60
+                                                          ? 'text-yellow-400 font-semibold'
+                                                          : 'text-red-400 font-semibold'
+                                                }
+                                            >
+                                                {stat.passRate}%
+                                            </span>
+                                        ) : (
+                                            <span class="text-gray-500">N/A</span>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Common Failure Reasons by Gate -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Common Failure Reasons by Gate</h2>
+            <p class="text-sm text-gray-400 mb-6">Top failure reasons for each gate to identify bottlenecks</p>
+
+            <div class="space-y-6">
+                {
+                    gateFailureAnalysis
+                        .filter((analysis) => analysis.totalFailures > 0)
+                        .map((analysis) => (
+                            <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="text-lg font-semibold">{analysis.name}</h3>
+                                    <span class="text-sm text-red-400 font-medium">
+                                        {analysis.totalFailures} {analysis.totalFailures === 1 ? 'failure' : 'failures'}
+                                    </span>
+                                </div>
+
+                                {analysis.failureReasons.length > 0 ? (
+                                    <div class="space-y-3">
+                                        {analysis.failureReasons.map((reason, index) => (
+                                            <div>
+                                                <div class="flex items-center justify-between mb-1">
+                                                    <span class="text-sm text-gray-300">
+                                                        {index + 1}. {reason.reason}
+                                                    </span>
+                                                    <span class="text-sm text-gray-400">{reason.count} occurrences</span>
+                                                </div>
+                                                <div class="w-full bg-gray-700 rounded-full h-2 overflow-hidden">
+                                                    <div
+                                                        class="bg-red-500 h-2 rounded-full"
+                                                        style={`width: ${(reason.count / analysis.totalFailures) * 100}%`}
+                                                    />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p class="text-sm text-gray-500">No specific failure reasons recorded</p>
+                                )}
+                            </div>
+                        ))
+                }
+            </div>
+
+            {gateFailureAnalysis.every((a) => a.totalFailures === 0) && <div class="text-center text-gray-400 py-8">No gate failures to analyze</div>}
+        </div>
+
+        <!-- Partners at Risk of Missing Launch Dates -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-8">
+            <h2 class="text-2xl font-bold mb-6">Partners at Risk of Missing Launch Dates</h2>
+            <p class="text-sm text-gray-400 mb-6">Partners with insufficient time buffer based on current gate progress</p>
+
+            {
+                atRiskPartners.length > 0 ? (
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-700">
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Risk</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Partner</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Current Gate</th>
+                                    <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">PAM Owner</th>
+                                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Target Launch</th>
+                                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Days Until Launch</th>
+                                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Est. Days Remaining</th>
+                                    <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Buffer</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {atRiskPartners.map((partner) => {
+                                    const buffer = partner.daysUntilLaunch - partner.estimatedDaysRemaining;
+                                    const bufferClass = buffer < 0 ? 'text-red-400' : buffer < 14 ? 'text-yellow-400' : 'text-green-400';
+
+                                    return (
+                                        <tr class="border-b border-gray-700/50 hover:bg-gray-700/30">
+                                            <td class="py-3 px-4">
+                                                {partner.riskLevel === 'high' ? (
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-900/50 text-red-300 border border-red-600">
+                                                        High
+                                                    </span>
+                                                ) : (
+                                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-yellow-900/50 text-yellow-300 border border-yellow-600">
+                                                        Medium
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td class="py-3 px-4 text-sm font-medium">
+                                                <a href={`/partner/${partner.id}`} class="text-blue-400 hover:text-blue-300">
+                                                    {partner.partnerName}
+                                                </a>
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-gray-400">
+                                                {gatesConfig.gates.find((g) => g.id === partner.currentGate)?.name || partner.currentGate}
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-gray-400">{partner.pamOwner}</td>
+                                            <td class="py-3 px-4 text-sm text-right text-gray-400">
+                                                {partner.targetLaunchDate.toLocaleDateString('en-US', {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    year: 'numeric'
+                                                })}
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-right">
+                                                <span class={partner.daysUntilLaunch < 30 ? 'text-red-400 font-semibold' : 'text-gray-300'}>
+                                                    {partner.daysUntilLaunch}d
+                                                </span>
+                                            </td>
+                                            <td class="py-3 px-4 text-sm text-right text-gray-400">{partner.estimatedDaysRemaining}d</td>
+                                            <td class="py-3 px-4 text-sm text-right">
+                                                <span class={`font-semibold ${bufferClass}`}>
+                                                    {buffer > 0 ? '+' : ''}
+                                                    {buffer}d
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                ) : (
+                    <div class="text-center text-gray-400 py-8">
+                        {partners.filter((p) => p.targetLaunchDate && p.currentGate !== 'post-launch').length === 0
+                            ? 'No partners with target launch dates'
+                            : 'All partners are on track to meet their launch dates'}
+                    </div>
+                )
+            }
+        </div>
+
+        <!-- PDM Capacity Utilization -->
+        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+            <h2 class="text-2xl font-bold mb-6">PDM Capacity Utilization</h2>
+            <p class="text-sm text-gray-400 mb-6">Target: 6-8 concurrent partners per PDM</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                    <div class="text-gray-400 text-sm font-medium mb-1">Active PDMs</div>
+                    <div class="text-2xl font-bold">{pdmCount}</div>
+                </div>
+
+                <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                    <div class="text-gray-400 text-sm font-medium mb-1">Partners in PDM Scope</div>
+                    <div class="text-2xl font-bold text-blue-400">{pdmPartners.length}</div>
+                    <div class="text-xs text-gray-500 mt-1">Pre-Contract through Gate 1</div>
+                </div>
+
+                <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                    <div class="text-gray-400 text-sm font-medium mb-1">Avg. Partners per PDM</div>
+                    <div class={`text-2xl font-bold ${getCapacityColor(capacityUtilization)}`}>
+                        {avgPartnersPerPDM}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">Target: {targetMin}-{targetMax}</div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-300">Capacity Utilization</span>
+                    <span class={`text-sm font-semibold ${getCapacityColor(capacityUtilization)}`}>
+                        {capacityUtilization}%
+                    </span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                    <div
+                        class={`h-4 rounded-full transition-all duration-500 ${
+                            capacityUtilization < 75 ? 'bg-yellow-500' : capacityUtilization > 125 ? 'bg-red-500' : 'bg-green-500'
+                        }`}
+                        style={`width: ${Math.min(capacityUtilization, 100)}%`}
+                    >
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>Under-utilized</span>
+                    <span>Optimal</span>
+                    <span>Over-capacity</span>
+                </div>
+            </div>
+
+            {pdmCount === 0 && <div class="text-center text-gray-400 py-8 mt-4">No PDM assignments found</div>}
+        </div>
+
+        <!-- Hidden data for export functionality -->
+        <script id="partners-data" type="application/json" set:html={JSON.stringify(partners)} />
+        <script
+            id="metrics-data"
+            type="application/json"
+            set:html={JSON.stringify(
+                gatePassFailStats.map((stat, index) => ({
+                    gateId: stat.gateId,
+                    gateName: stat.name,
+                    passed: stat.passed,
+                    failed: stat.failed,
+                    inProgress: stat.inProgress,
+                    notStarted: stat.notStarted,
+                    passRate: stat.passRate,
+                    avgCompletionDays: gateTimeStats[index]?.avgDays || null,
+                    completedCount: gateTimeStats[index]?.completedCount || 0
+                }))
+            )}
+        />
+    </div>
+</Layout>
+
+<script>
+    import { exportPartnersToCSV, exportGateMetricsToCSV, downloadCSV, generateExportFilename } from '../utils/export';
+    import type { PartnerRecord, GateId } from '../types/partner';
+    import type { GateCompletionMetrics } from '../utils/export';
+
+    // Get data from the page (passed via data attributes)
+    const partnersData = document.getElementById('partners-data')?.textContent;
+    const metricsData = document.getElementById('metrics-data')?.textContent;
+
+    let partners: PartnerRecord[] = [];
+    let metrics: GateCompletionMetrics[] = [];
+
+    if (partnersData) {
+        try {
+            partners = JSON.parse(partnersData);
+        } catch (e) {
+            console.error('Failed to parse partners data:', e);
+        }
+    }
+
+    if (metricsData) {
+        try {
+            metrics = JSON.parse(metricsData);
+        } catch (e) {
+            console.error('Failed to parse metrics data:', e);
+        }
+    }
+
+    // Export partners button
+    const exportPartnersBtn = document.getElementById('export-partners-btn');
+    if (exportPartnersBtn) {
+        exportPartnersBtn.addEventListener('click', () => {
+            const csv = exportPartnersToCSV(partners);
+            const filename = generateExportFilename('partners');
+            downloadCSV(csv, filename);
+        });
+    }
+
+    // Export metrics button
+    const exportMetricsBtn = document.getElementById('export-metrics-btn');
+    if (exportMetricsBtn) {
+        exportMetricsBtn.addEventListener('click', () => {
+            const csv = exportGateMetricsToCSV(metrics);
+            const filename = generateExportFilename('gate-metrics');
+            downloadCSV(csv, filename);
+        });
+    }
+</script>

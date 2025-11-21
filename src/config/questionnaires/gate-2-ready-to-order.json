@@ -1,0 +1,383 @@
+{
+    "id": "gate-2-ready-to-order",
+    "version": "1.0.0",
+    "metadata": {
+        "name": "Gate 2: Ready to Order",
+        "description": "Validates systems integration and operational process setup. Partner systems are integrated and ready to accept customer orders.",
+        "gate": "gate-2",
+        "estimatedTime": 45,
+        "requiredRoles": [
+            "TPM",
+            "PDM",
+            "PSM"
+        ],
+        "primaryRole": "TPM",
+        "icon": "server"
+    },
+    "gateCriteria": [
+        "API integration complete",
+        "Monitoring active",
+        "Test transactions successful",
+        "Order management system configured",
+        "Support processes established",
+        "Operational runbooks created"
+    ],
+    "sections": [
+        {
+            "id": "phase-2a-systems-integration",
+            "title": "Phase 2A: Systems Integration & API Implementation (Weeks 13-17)",
+            "description": "API integration, system connectivity, and technical implementation",
+            "fields": [
+                {
+                    "id": "api-integration-complete",
+                    "type": "radio",
+                    "label": "Has API integration been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "api-integration-date",
+                    "type": "date",
+                    "label": "API Integration Completion Date",
+                    "required": true
+                },
+                {
+                    "id": "api-authentication-configured",
+                    "type": "radio",
+                    "label": "Has API authentication been configured and tested?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "test-transactions-successful",
+                    "type": "radio",
+                    "label": "Have test transactions been successfully completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "test-transactions-count",
+                    "type": "number",
+                    "label": "Number of successful test transactions",
+                    "required": true,
+                    "helpText": "Total number of test transactions completed successfully"
+                },
+                {
+                    "id": "error-handling-tested",
+                    "type": "radio",
+                    "label": "Has error handling been tested for common failure scenarios?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "monitoring-active",
+                    "type": "radio",
+                    "label": "Is system monitoring active and configured?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "monitoring-tools",
+                    "type": "text",
+                    "label": "Monitoring tools/platforms in use",
+                    "required": true,
+                    "helpText": "e.g., CloudWatch, Datadog, New Relic"
+                },
+                {
+                    "id": "alerting-configured",
+                    "type": "radio",
+                    "label": "Have alerting rules been configured for critical issues?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "performance-benchmarks-met",
+                    "type": "radio",
+                    "label": "Have performance benchmarks been met (latency, throughput)?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "data-synchronization-tested",
+                    "type": "radio",
+                    "label": "Has data synchronization between systems been tested?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-2a-notes",
+                    "type": "textarea",
+                    "label": "Phase 2A Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 2A"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "api-integration-complete",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "API integration must be completed"
+                    },
+                    {
+                        "field": "test-transactions-successful",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Test transactions must be successfully completed"
+                    },
+                    {
+                        "field": "monitoring-active",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "System monitoring must be active and configured"
+                    },
+                    {
+                        "field": "error-handling-tested",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Error handling must be tested for common failure scenarios"
+                    },
+                    {
+                        "field": "alerting-configured",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Alerting rules must be configured for critical issues"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "API Integration Guide",
+                    "url": "/docs/api-integration",
+                    "type": "internal"
+                },
+                {
+                    "title": "Monitoring Setup Guide",
+                    "url": "/docs/monitoring-setup",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "phase-2b-operational-process",
+            "title": "Phase 2B: Operational Process Setup (Weeks 13-17)",
+            "description": "Order management, support processes, and operational readiness",
+            "fields": [
+                {
+                    "id": "order-management-configured",
+                    "type": "radio",
+                    "label": "Has the order management system been configured?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "order-workflow-tested",
+                    "type": "radio",
+                    "label": "Has the end-to-end order workflow been tested?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "order-fulfillment-process-documented",
+                    "type": "radio",
+                    "label": "Has the order fulfillment process been documented?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-processes-established",
+                    "type": "radio",
+                    "label": "Have customer support processes been established?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-team-trained",
+                    "type": "radio",
+                    "label": "Has the support team been trained on Kuiper products and processes?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-team-size",
+                    "type": "number",
+                    "label": "Number of support team members trained",
+                    "required": true,
+                    "helpText": "Total number of support team members ready to handle customer inquiries"
+                },
+                {
+                    "id": "escalation-procedures-defined",
+                    "type": "radio",
+                    "label": "Have escalation procedures been defined and communicated?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "operational-runbooks-created",
+                    "type": "radio",
+                    "label": "Have operational runbooks been created for common scenarios?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "incident-response-plan",
+                    "type": "radio",
+                    "label": "Is an incident response plan in place?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "billing-integration-tested",
+                    "type": "radio",
+                    "label": "Has billing system integration been tested?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "reporting-dashboards-configured",
+                    "type": "radio",
+                    "label": "Have reporting dashboards been configured for operational metrics?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-2b-notes",
+                    "type": "textarea",
+                    "label": "Phase 2B Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 2B"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "order-management-configured",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Order management system must be configured"
+                    },
+                    {
+                        "field": "order-workflow-tested",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "End-to-end order workflow must be tested"
+                    },
+                    {
+                        "field": "support-processes-established",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Customer support processes must be established"
+                    },
+                    {
+                        "field": "operational-runbooks-created",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Operational runbooks must be created for common scenarios"
+                    },
+                    {
+                        "field": "escalation-procedures-defined",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Escalation procedures must be defined and communicated"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Order Management Guide",
+                    "url": "/docs/order-management",
+                    "type": "internal"
+                },
+                {
+                    "title": "Support Process Templates",
+                    "url": "/docs/support-processes",
+                    "type": "internal"
+                }
+            ]
+        }
+    ],
+    "validation": {
+        "requiredSections": [
+            "phase-2a-systems-integration",
+            "phase-2b-operational-process"
+        ],
+        "minimumPassingSections": 2,
+        "allowPartialSubmission": false,
+        "specialRules": [
+            {
+                "description": "Both phases must pass for Gate 2 completion",
+                "condition": "all-sections-pass",
+                "action": "require-all-passing"
+            }
+        ]
+    },
+    "documentation": [
+        {
+            "title": "Gate 2 Overview",
+            "url": "/docs/gate-2-overview",
+            "type": "internal"
+        },
+        {
+            "title": "Ready to Order Criteria",
+            "url": "/docs/ready-to-order-criteria",
+            "type": "internal"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 {
-    "name": "astro-netlify-platform-starter",
+    "name": "kuiper-partner-onboarding-hub",
     "type": "module",
     "version": "0.1.0",
     "scripts": {
@@ -7,7 +7,15 @@
         "start": "astro dev",
         "build": "astro build",
         "preview": "astro preview",
-        "astro": "astro"
+        "astro": "astro",
+        "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:run": "vitest run",
+        "test:integration": "playwright test",
+        "test:integration:ui": "playwright test --ui",
+        "test:integration:headed": "playwright test --headed",
+        "test:integration:debug": "playwright test --debug",
+        "analyze:bundle": "node scripts/analyze-bundle.js"
     },
     "dependencies": {
         "@astrojs/netlify": "^6.6.0",
@@ -17,18 +25,23 @@
         "@netlify/functions": "^5.1.0",
         "@tailwindcss/vite": "^4.1.16",
         "astro": "^5.15.0",
-        "blobshape": "^1.0.0",
         "marked": "^16.4.1",
         "marked-shiki": "^1.2.1",
         "react": "^19.2.0",
         "react-dom": "^19.2.0",
-        "tailwindcss": "^4.1.16",
-        "unique-names-generator": "^4.7.1"
+        "tailwindcss": "^4.1.16"
     },
     "devDependencies": {
-        "@types/blobshape": "^1.0.3",
+        "@playwright/test": "^1.56.1",
+        "@testing-library/jest-dom": "^6.9.1",
+        "@testing-library/react": "^16.3.0",
+        "@testing-library/user-event": "^14.6.1",
         "@types/node": "^20.12.7",
         "@types/react": "^19.2.2",
-        "@types/react-dom": "^19.2.2"
+        "@types/react-dom": "^19.2.2",
+        "@vitejs/plugin-react": "^5.1.1",
+        "@vitest/ui": "^2.1.8",
+        "jsdom": "^27.2.0",
+        "vitest": "^2.1.8"
     }
 }

@@ -1,0 +1,253 @@
+---
+/**
+ * Responsive Design Test Page
+ * Tests all major components at different viewport sizes
+ */
+import Layout from '../layouts/Layout.astro';
+import { QuestionnaireForm } from '../components/questionnaires/QuestionnaireForm';
+import { SignatureCapture } from '../components/questionnaires/SignatureCapture';
+import { SectionStatus } from '../components/questionnaires/SectionStatus';
+import type { QuestionnaireConfig } from '../types/questionnaire';
+import type { SectionStatus as SectionStatusType } from '../types/submission';
+
+// Sample questionnaire config for testing
+const testConfig: QuestionnaireConfig = {
+    id: 'responsive-test',
+    version: '1.0.0',
+    metadata: {
+        name: 'Responsive Design Test',
+        description: 'Testing responsive layouts',
+        gate: 'test',
+        estimatedTime: 10,
+        requiredRoles: ['Admin'],
+        primaryRole: 'Admin'
+    },
+    sections: [
+        {
+            id: 'section-1',
+            title: 'Test Section 1',
+            description: 'Testing form responsiveness',
+            fields: [
+                {
+                    id: 'field-1',
+                    type: 'text',
+                    label: 'Sample Text Field',
+                    required: true,
+                    placeholder: 'Enter text here'
+                },
+                {
+                    id: 'field-2',
+                    type: 'select',
+                    label: 'Sample Select Field',
+                    required: false,
+                    options: ['Option 1', 'Option 2', 'Option 3']
+                }
+            ]
+        },
+        {
+            id: 'section-2',
+            title: 'Test Section 2',
+            description: 'More testing',
+            fields: [
+                {
+                    id: 'field-3',
+                    type: 'textarea',
+                    label: 'Sample Textarea',
+                    required: false,
+                    placeholder: 'Enter long text here'
+                }
+            ]
+        }
+    ],
+    validation: {
+        requiredFields: ['field-1']
+    },
+    documentation: [],
+    gateCriteria: []
+};
+
+const testStatuses: { label: string; status: SectionStatusType }[] = [
+    {
+        label: 'Pass Status',
+        status: { result: 'pass' }
+    },
+    {
+        label: 'Fail Status',
+        status: {
+            result: 'fail',
+            failureReasons: ['Reason 1', 'Reason 2']
+        }
+    },
+    {
+        label: 'Pending Status',
+        status: { result: 'pending' }
+    }
+];
+---
+
+<Layout title="Responsive Design Test">
+    <div class="py-8">
+        <h1 class="text-3xl sm:text-4xl font-bold mb-6">Responsive Design Test Page</h1>
+
+        <div class="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded mb-8">
+            <p class="font-semibold mb-2">Testing Instructions:</p>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                <li>Test on tablet (768px - 1024px) and desktop (1024px+) viewports</li>
+                <li>Verify all buttons are at least 44px tall (touch-friendly)</li>
+                <li>Check that forms are usable and readable</li>
+                <li>Test signature capture with touch/mouse</li>
+                <li>Verify navigation adapts to screen size</li>
+            </ul>
+        </div>
+
+        <!-- Grid Layout Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Grid Layout Test</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                    <h3 class="font-semibold mb-2">Card 1</h3>
+                    <p class="text-sm text-gray-300">This card should stack on mobile, 2 columns on tablet, 3 on desktop</p>
+                </div>
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                    <h3 class="font-semibold mb-2">Card 2</h3>
+                    <p class="text-sm text-gray-300">Testing responsive grid behavior</p>
+                </div>
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                    <h3 class="font-semibold mb-2">Card 3</h3>
+                    <p class="text-sm text-gray-300">Resize window to test</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Button Size Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Touch Target Test</h2>
+            <div class="flex flex-wrap gap-3">
+                <button class="px-6 py-3 bg-blue-600 text-white rounded-md min-h-[44px]"> Touch-Friendly Button </button>
+                <button class="px-6 py-3 bg-green-600 text-white rounded-md min-h-[44px]"> 44px Min Height </button>
+                <button class="px-6 py-3 bg-purple-600 text-white rounded-md min-h-[44px]"> Easy to Tap </button>
+            </div>
+        </section>
+
+        <!-- Section Status Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Section Status Components</h2>
+            <div class="space-y-4">
+                {
+                    testStatuses.map((test) => (
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+                            <h3 class="text-sm font-medium text-gray-400 mb-2">{test.label}</h3>
+                            <div class="flex flex-wrap gap-4">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">Compact Mode:</p>
+                                    <SectionStatus sectionId="test" status={test.status} mode="compact" client:load />
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-1">Detailed Mode:</p>
+                                    <SectionStatus sectionId="test" status={test.status} mode="detailed" client:load />
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                }
+            </div>
+        </section>
+
+        <!-- Signature Capture Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Signature Capture Test</h2>
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <p class="text-sm text-gray-300 mb-4">Test signature capture on touch devices. Canvas should be responsive and touch-friendly.</p>
+                <SignatureCapture onSignature={(sig) => console.log('Signature captured:', sig)} client:load />
+            </div>
+        </section>
+
+        <!-- Responsive Text Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Responsive Typography</h2>
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-4">
+                <p class="text-sm sm:text-base">This text should be 14px on mobile and 16px on larger screens.</p>
+                <p class="text-base sm:text-lg">This text should be 16px on mobile and 18px on larger screens.</p>
+                <p class="text-lg sm:text-xl lg:text-2xl">This text should scale from 18px to 20px to 24px.</p>
+            </div>
+        </section>
+
+        <!-- Table Responsiveness Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Table Responsiveness</h2>
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <div class="overflow-x-auto">
+                    <table class="w-full min-w-[600px]">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Column 1</th>
+                                <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Column 2</th>
+                                <th class="text-left py-3 px-4 text-sm font-medium text-gray-400">Column 3</th>
+                                <th class="text-right py-3 px-4 text-sm font-medium text-gray-400">Column 4</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-700/50">
+                                <td class="py-3 px-4 text-sm">Data 1</td>
+                                <td class="py-3 px-4 text-sm">Data 2</td>
+                                <td class="py-3 px-4 text-sm">Data 3</td>
+                                <td class="py-3 px-4 text-sm text-right">Data 4</td>
+                            </tr>
+                            <tr class="border-b border-gray-700/50">
+                                <td class="py-3 px-4 text-sm">Data 5</td>
+                                <td class="py-3 px-4 text-sm">Data 6</td>
+                                <td class="py-3 px-4 text-sm">Data 7</td>
+                                <td class="py-3 px-4 text-sm text-right">Data 8</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="text-xs text-gray-500 mt-2">Table should scroll horizontally on small screens</p>
+            </div>
+        </section>
+
+        <!-- Form Layout Test -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-bold mb-4">Form Layout Test</h2>
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                <form class="space-y-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">First Name</label>
+                            <input type="text" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white" placeholder="John" />
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Last Name</label>
+                            <input type="text" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white" placeholder="Doe" />
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-2">Email</label>
+                        <input
+                            type="email"
+                            class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white"
+                            placeholder="john.doe@example.com"
+                        />
+                    </div>
+                    <div class="flex flex-col sm:flex-row gap-3">
+                        <button type="button" class="px-6 py-3 bg-blue-600 text-white rounded-md min-h-[44px]"> Submit </button>
+                        <button type="button" class="px-6 py-3 bg-gray-600 text-white rounded-md min-h-[44px]"> Cancel </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <div class="bg-green-900/30 border border-green-700 text-green-200 px-4 py-3 rounded">
+            <p class="font-semibold mb-2">✅ Responsive Design Checklist:</p>
+            <ul class="list-disc list-inside space-y-1 text-sm">
+                <li>All touch targets are minimum 44x44px</li>
+                <li>Forms stack vertically on mobile, side-by-side on tablet+</li>
+                <li>Navigation adapts to screen size (icons only on very small screens)</li>
+                <li>Tables scroll horizontally when needed</li>
+                <li>Typography scales appropriately</li>
+                <li>Signature canvas works with touch input</li>
+                <li>Buttons are full-width on mobile, inline on desktop</li>
+            </ul>
+        </div>
+    </div>
+</Layout>

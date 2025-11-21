@@ -1,0 +1,384 @@
+{
+    "id": "pre-contract-pdm",
+    "version": "1.0.0",
+    "metadata": {
+        "name": "Pre-Contract PDM Engagement Checklist",
+        "description": "Validates qualification criteria for PDM support before contract signature",
+        "gate": "pre-contract",
+        "estimatedTime": 30,
+        "requiredRoles": [
+            "PAM",
+            "PDM"
+        ],
+        "primaryRole": "PAM",
+        "icon": "clipboard-check"
+    },
+    "gateCriteria": [
+        "Executive Sponsorship Confirmed",
+        "Commercial Framework Alignment",
+        "Technical Feasibility Questions Identified",
+        "Near-Term Closure Timeline",
+        "Strategic Partner Classification"
+    ],
+    "sections": [
+        {
+            "id": "executive-sponsorship",
+            "title": "Executive Sponsorship Confirmed",
+            "description": "Validate that executive-level commitment exists for the partnership",
+            "fields": [
+                {
+                    "id": "exec-sponsor-name",
+                    "type": "text",
+                    "label": "Executive Sponsor Name",
+                    "required": true,
+                    "helpText": "Name of the C-level or VP-level executive sponsoring this partnership"
+                },
+                {
+                    "id": "exec-sponsor-title",
+                    "type": "text",
+                    "label": "Executive Sponsor Title",
+                    "required": true,
+                    "helpText": "Title of the executive sponsor (e.g., CEO, CTO, VP of Sales)"
+                },
+                {
+                    "id": "exec-commitment-confirmed",
+                    "type": "radio",
+                    "label": "Has executive commitment been confirmed in writing or in a meeting?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "exec-commitment-details",
+                    "type": "textarea",
+                    "label": "Details of Executive Commitment",
+                    "required": true,
+                    "helpText": "Describe how executive commitment was confirmed (meeting notes, email, etc.)"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "exec-commitment-confirmed",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Executive Sponsorship Validation Guide",
+                    "url": "/docs/exec-sponsorship",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "commercial-framework",
+            "title": "Commercial Framework Alignment",
+            "description": "Ensure the partnership structure and revenue model are clearly defined",
+            "fields": [
+                {
+                    "id": "partnership-type",
+                    "type": "select",
+                    "label": "Partnership Type",
+                    "required": true,
+                    "options": [
+                        "PPA",
+                        "Distribution",
+                        "Sales-Agent",
+                        "Other"
+                    ]
+                },
+                {
+                    "id": "revenue-model-defined",
+                    "type": "radio",
+                    "label": "Is the revenue model clearly defined?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "revenue-model-description",
+                    "type": "textarea",
+                    "label": "Revenue Model Description",
+                    "required": true,
+                    "helpText": "Describe the revenue sharing model, pricing structure, and financial terms"
+                },
+                {
+                    "id": "commercial-terms-aligned",
+                    "type": "radio",
+                    "label": "Are commercial terms aligned between both parties?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No",
+                        "Partially"
+                    ]
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "revenue-model-defined",
+                        "operator": "equals",
+                        "value": "Yes"
+                    },
+                    {
+                        "field": "commercial-terms-aligned",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Commercial Framework Assessment",
+                    "url": "/docs/commercial-framework",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "technical-feasibility",
+            "title": "Technical Feasibility / Partner Operational Questions",
+            "description": "Identify and document technical questions and operational requirements",
+            "fields": [
+                {
+                    "id": "technical-questions-identified",
+                    "type": "radio",
+                    "label": "Have technical questions been identified and documented?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "technical-questions-list",
+                    "type": "textarea",
+                    "label": "List of Technical Questions",
+                    "required": true,
+                    "helpText": "Document all technical questions that need to be addressed (API integration, data requirements, system compatibility, etc.)"
+                },
+                {
+                    "id": "operational-requirements-defined",
+                    "type": "radio",
+                    "label": "Are operational requirements clearly defined?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No",
+                        "Partially"
+                    ]
+                },
+                {
+                    "id": "operational-requirements-description",
+                    "type": "textarea",
+                    "label": "Operational Requirements Description",
+                    "required": true,
+                    "helpText": "Describe operational requirements (support model, SLAs, monitoring, etc.)"
+                },
+                {
+                    "id": "technical-blockers",
+                    "type": "textarea",
+                    "label": "Known Technical Blockers",
+                    "required": false,
+                    "helpText": "List any known technical blockers or concerns"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "technical-questions-identified",
+                        "operator": "equals",
+                        "value": "Yes"
+                    },
+                    {
+                        "field": "operational-requirements-defined",
+                        "operator": "in",
+                        "value": [
+                            "Yes",
+                            "Partially"
+                        ]
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Technical Feasibility Assessment Guide",
+                    "url": "/docs/technical-feasibility",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "closure-timeline",
+            "title": "Near-Term Closure Timeline",
+            "description": "Validate that contract closure is expected within 60 days",
+            "fields": [
+                {
+                    "id": "expected-closure-date",
+                    "type": "date",
+                    "label": "Expected Contract Closure Date",
+                    "required": true,
+                    "helpText": "Target date for contract signature"
+                },
+                {
+                    "id": "closure-within-60-days",
+                    "type": "radio",
+                    "label": "Is closure expected within 60 days?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "closure-confidence-level",
+                    "type": "select",
+                    "label": "Confidence Level in Closure Timeline",
+                    "required": true,
+                    "options": [
+                        "High",
+                        "Medium",
+                        "Low"
+                    ]
+                },
+                {
+                    "id": "closure-blockers",
+                    "type": "textarea",
+                    "label": "Potential Blockers to Closure",
+                    "required": false,
+                    "helpText": "List any potential blockers or risks to meeting the closure timeline"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "closure-within-60-days",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Contract Closure Timeline Guide",
+                    "url": "/docs/closure-timeline",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "strategic-classification",
+            "title": "Strategic Partner Classification",
+            "description": "Validate partner tier classification and strategic value",
+            "fields": [
+                {
+                    "id": "partner-tier",
+                    "type": "select",
+                    "label": "Partner Tier Classification",
+                    "required": true,
+                    "options": [
+                        "Tier 0",
+                        "Tier 1",
+                        "Tier 2"
+                    ],
+                    "helpText": "Tier 0: CCV ≥ $50M, Tier 1: CCV ≥ 10% Country LRP, Tier 2: Below threshold"
+                },
+                {
+                    "id": "ccv-amount",
+                    "type": "number",
+                    "label": "Contractually Committed Value (CCV) in USD",
+                    "required": true,
+                    "helpText": "Total contractually committed value in US dollars"
+                },
+                {
+                    "id": "country-lrp",
+                    "type": "number",
+                    "label": "Country Launch Revenue Potential (LRP) in USD",
+                    "required": true,
+                    "helpText": "Total launch revenue potential for the country"
+                },
+                {
+                    "id": "ccv-percentage-of-lrp",
+                    "type": "number",
+                    "label": "CCV as Percentage of Country LRP",
+                    "required": true,
+                    "helpText": "Calculated: (CCV / Country LRP) × 100"
+                },
+                {
+                    "id": "strategic-value-justification",
+                    "type": "textarea",
+                    "label": "Strategic Value Justification",
+                    "required": true,
+                    "helpText": "Explain why this partner qualifies for PDM support (market position, strategic importance, growth potential)"
+                },
+                {
+                    "id": "meets-tier-threshold",
+                    "type": "radio",
+                    "label": "Does partner meet Tier 0 or Tier 1 threshold?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "meets-tier-threshold",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Partner Tier Classification Guide",
+                    "url": "/docs/tier-classification",
+                    "type": "internal"
+                },
+                {
+                    "title": "Strategic Value Assessment Framework",
+                    "url": "/docs/strategic-value",
+                    "type": "internal"
+                }
+            ]
+        }
+    ],
+    "validation": {
+        "requiredSections": [
+            "executive-sponsorship",
+            "commercial-framework",
+            "technical-feasibility",
+            "closure-timeline",
+            "strategic-classification"
+        ],
+        "minimumPassingSections": 5,
+        "allowPartialSubmission": false
+    },
+    "documentation": [
+        {
+            "title": "Pre-Contract PDM Engagement Overview",
+            "url": "/docs/pre-contract-overview",
+            "type": "internal"
+        },
+        {
+            "title": "PDM Resource Allocation Guidelines",
+            "url": "/docs/pdm-allocation",
+            "type": "internal"
+        }
+    ]
+}

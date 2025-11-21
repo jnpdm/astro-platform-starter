@@ -1,0 +1,221 @@
+---
+/**
+ * SectionStatus Component Demo
+ *
+ * Demonstrates the SectionStatus component with various status types and modes
+ */
+
+import Layout from '../../layouts/Layout.astro';
+import { SectionStatus } from '../../components/questionnaires/SectionStatus';
+import type { SectionStatus as SectionStatusType } from '../../types/submission';
+
+const title = 'SectionStatus Component Demo';
+
+// Example statuses
+const passStatus: SectionStatusType = {
+    result: 'pass',
+    evaluatedAt: new Date('2025-01-15T10:30:00Z'),
+    evaluatedBy: 'pdm-user@example.com',
+    notes: 'All criteria met successfully'
+};
+
+const failStatus: SectionStatusType = {
+    result: 'fail',
+    failureReasons: [
+        'Missing executive sponsorship confirmation',
+        'CCV below strategic threshold (< 10% of Country LRP)',
+        'Timeline exceeds 60-day closure requirement'
+    ],
+    evaluatedAt: new Date('2025-01-15T10:30:00Z'),
+    evaluatedBy: 'pdm-user@example.com',
+    notes: 'Requires immediate attention before proceeding'
+};
+
+const pendingStatus: SectionStatusType = {
+    result: 'pending',
+    notes: 'Awaiting PDM team review'
+};
+
+const failStatusNoReasons: SectionStatusType = {
+    result: 'fail',
+    evaluatedAt: new Date('2025-01-15T10:30:00Z')
+};
+
+const passStatusSimple: SectionStatusType = {
+    result: 'pass'
+};
+---
+
+<Layout title={title}>
+    <div class="max-w-4xl mx-auto py-8 px-4">
+        <h1 class="text-3xl font-bold mb-8">SectionStatus Component Demo</h1>
+
+        <!-- Detailed Mode Examples -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-6 border-b pb-2">Detailed Mode</h2>
+
+            <div class="space-y-8">
+                <!-- Pass Status -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Pass Status</h3>
+                    <SectionStatus sectionId="executive-sponsorship" status={passStatus} mode="detailed" client:load />
+                </div>
+
+                <!-- Fail Status with Reasons -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Fail Status with Multiple Reasons</h3>
+                    <SectionStatus sectionId="strategic-classification" status={failStatus} mode="detailed" client:load />
+                </div>
+
+                <!-- Pending Status -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Pending Status</h3>
+                    <SectionStatus sectionId="commercial-framework" status={pendingStatus} mode="detailed" client:load />
+                </div>
+
+                <!-- Fail Status without Reasons -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Fail Status without Reasons</h3>
+                    <SectionStatus sectionId="technical-feasibility" status={failStatusNoReasons} mode="detailed" client:load />
+                </div>
+
+                <!-- Pass Status Simple -->
+                <div class="bg-white border rounded-lg p-6">
+                    <h3 class="text-lg font-semibold mb-4">Pass Status (Simple)</h3>
+                    <SectionStatus sectionId="timeline" status={passStatusSimple} mode="detailed" client:load />
+                </div>
+            </div>
+        </section>
+
+        <!-- Compact Mode Examples -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-6 border-b pb-2">Compact Mode</h2>
+
+            <div class="bg-white border rounded-lg p-6">
+                <div class="space-y-4">
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Executive Sponsorship</span>
+                        <SectionStatus sectionId="executive-sponsorship" status={passStatus} mode="compact" client:load />
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Strategic Classification</span>
+                        <SectionStatus sectionId="strategic-classification" status={failStatus} mode="compact" client:load />
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Commercial Framework</span>
+                        <SectionStatus sectionId="commercial-framework" status={pendingStatus} mode="compact" client:load />
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Technical Feasibility</span>
+                        <SectionStatus sectionId="technical-feasibility" status={passStatusSimple} mode="compact" client:load />
+                    </div>
+
+                    <div class="flex items-center justify-between">
+                        <span class="font-medium">Timeline Assessment</span>
+                        <SectionStatus sectionId="timeline" status={failStatusNoReasons} mode="compact" client:load />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Case: Questionnaire Summary -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-6 border-b pb-2">Use Case: Questionnaire Summary</h2>
+
+            <div class="bg-white border rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Pre-Contract PDM Engagement</h3>
+                <p class="text-gray-600 mb-6">Submitted on January 15, 2025 by john.doe@example.com</p>
+
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="font-semibold mb-2">Section 1: Executive Sponsorship</h4>
+                        <SectionStatus sectionId="executive-sponsorship" status={passStatus} mode="detailed" client:load />
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold mb-2">Section 2: Commercial Framework</h4>
+                        <SectionStatus sectionId="commercial-framework" status={passStatusSimple} mode="detailed" client:load />
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold mb-2">Section 3: Technical Feasibility</h4>
+                        <SectionStatus sectionId="technical-feasibility" status={pendingStatus} mode="detailed" client:load />
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold mb-2">Section 4: Timeline</h4>
+                        <SectionStatus sectionId="timeline" status={passStatusSimple} mode="detailed" client:load />
+                    </div>
+
+                    <div>
+                        <h4 class="font-semibold mb-2">Section 5: Strategic Classification</h4>
+                        <SectionStatus sectionId="strategic-classification" status={failStatus} mode="detailed" client:load />
+                    </div>
+                </div>
+
+                <div class="mt-8 pt-6 border-t">
+                    <div class="flex items-center justify-between">
+                        <span class="text-lg font-semibold">Overall Status:</span>
+                        <SectionStatus
+                            sectionId="overall"
+                            status={{
+                                result: 'fail',
+                                failureReasons: ['One or more sections failed validation']
+                            }}
+                            mode="detailed"
+                            client:load
+                        />
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Case: Dashboard Grid -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold mb-6 border-b pb-2">Use Case: Dashboard Grid</h2>
+
+            <div class="bg-white border rounded-lg p-6">
+                <h3 class="text-xl font-semibold mb-4">Quick Status Overview</h3>
+
+                <div class="grid grid-cols-5 gap-4">
+                    <div class="text-center">
+                        <SectionStatus sectionId="section-1" status={passStatus} mode="compact" className="mx-auto" client:load />
+                        <p class="text-xs mt-2 text-gray-600">Section 1</p>
+                    </div>
+
+                    <div class="text-center">
+                        <SectionStatus sectionId="section-2" status={passStatusSimple} mode="compact" className="mx-auto" client:load />
+                        <p class="text-xs mt-2 text-gray-600">Section 2</p>
+                    </div>
+
+                    <div class="text-center">
+                        <SectionStatus sectionId="section-3" status={pendingStatus} mode="compact" className="mx-auto" client:load />
+                        <p class="text-xs mt-2 text-gray-600">Section 3</p>
+                    </div>
+
+                    <div class="text-center">
+                        <SectionStatus sectionId="section-4" status={failStatus} mode="compact" className="mx-auto" client:load />
+                        <p class="text-xs mt-2 text-gray-600">Section 4</p>
+                    </div>
+
+                    <div class="text-center">
+                        <SectionStatus sectionId="section-5" status={passStatusSimple} mode="compact" className="mx-auto" client:load />
+                        <p class="text-xs mt-2 text-gray-600">Section 5</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Link -->
+        <section class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-2">Documentation</h3>
+            <p class="text-gray-700 mb-4">For detailed documentation, usage examples, and API reference, see the README file.</p>
+            <a href="https://github.com/your-repo/src/components/questionnaires/README.md" class="text-blue-600 hover:text-blue-800 underline">
+                View Component Documentation →
+            </a>
+        </section>
+    </div>
+</Layout>

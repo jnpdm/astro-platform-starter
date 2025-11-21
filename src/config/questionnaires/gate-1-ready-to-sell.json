@@ -1,0 +1,453 @@
+{
+    "id": "gate-1-ready-to-sell",
+    "version": "1.0.0",
+    "metadata": {
+        "name": "Gate 1: Ready to Sell",
+        "description": "Validates completion of onboarding kickoff, GTM strategy, and training. Partner team is trained and ready to sell Kuiper services.",
+        "gate": "gate-1",
+        "estimatedTime": 60,
+        "requiredRoles": [
+            "PDM",
+            "PAM",
+            "TPM"
+        ],
+        "primaryRole": "PDM",
+        "icon": "briefcase"
+    },
+    "gateCriteria": [
+        "Project plan approved",
+        "GTM strategy approved",
+        "Technical architecture defined",
+        "Sales team certified",
+        "Product knowledge validated",
+        "Portal access confirmed"
+    ],
+    "sections": [
+        {
+            "id": "phase-1a-kickoff",
+            "title": "Phase 1A: Onboarding Kickoff & Planning (Weeks 1-3)",
+            "description": "Initial onboarding activities including kickoff session, project planning, and team alignment",
+            "fields": [
+                {
+                    "id": "kickoff-session-completed",
+                    "type": "radio",
+                    "label": "Has the onboarding kickoff session been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "kickoff-date",
+                    "type": "date",
+                    "label": "Kickoff Session Date",
+                    "required": true
+                },
+                {
+                    "id": "project-plan-created",
+                    "type": "radio",
+                    "label": "Has a detailed project plan been created?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "project-plan-approved",
+                    "type": "radio",
+                    "label": "Has the project plan been approved by all stakeholders?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "launch-timeline-defined",
+                    "type": "radio",
+                    "label": "Has the launch timeline been defined with key milestones?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "roles-responsibilities-documented",
+                    "type": "radio",
+                    "label": "Have roles and responsibilities been documented and agreed upon?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "communication-plan-established",
+                    "type": "radio",
+                    "label": "Has a communication plan been established (meeting cadence, escalation paths)?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-1a-notes",
+                    "type": "textarea",
+                    "label": "Phase 1A Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 1A"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "kickoff-session-completed",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Kickoff session must be completed"
+                    },
+                    {
+                        "field": "project-plan-approved",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Project plan must be approved by all stakeholders"
+                    },
+                    {
+                        "field": "launch-timeline-defined",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Launch timeline with key milestones must be defined"
+                    },
+                    {
+                        "field": "roles-responsibilities-documented",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Roles and responsibilities must be documented"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Onboarding Kickoff Template",
+                    "url": "/docs/kickoff-template",
+                    "type": "internal"
+                },
+                {
+                    "title": "Project Planning Guide",
+                    "url": "/docs/project-planning",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "phase-1b-gtm-discovery",
+            "title": "Phase 1B: GTM Strategy & Technical Discovery (Weeks 3-6)",
+            "description": "Go-to-market strategy development and technical architecture discovery",
+            "fields": [
+                {
+                    "id": "gtm-strategy-developed",
+                    "type": "radio",
+                    "label": "Has a GTM strategy been developed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "gtm-strategy-approved",
+                    "type": "radio",
+                    "label": "Has the GTM strategy been approved?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "target-customer-segments-defined",
+                    "type": "radio",
+                    "label": "Have target customer segments been defined?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "pricing-strategy-defined",
+                    "type": "radio",
+                    "label": "Has the pricing strategy been defined?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "technical-architecture-defined",
+                    "type": "radio",
+                    "label": "Has the technical architecture been defined?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "integration-requirements-documented",
+                    "type": "radio",
+                    "label": "Have integration requirements been documented?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "technical-discovery-completed",
+                    "type": "radio",
+                    "label": "Has technical discovery been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "api-access-requirements-identified",
+                    "type": "radio",
+                    "label": "Have API access requirements been identified?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-1b-notes",
+                    "type": "textarea",
+                    "label": "Phase 1B Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 1B"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "gtm-strategy-approved",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "GTM strategy must be approved"
+                    },
+                    {
+                        "field": "technical-architecture-defined",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Technical architecture must be defined"
+                    },
+                    {
+                        "field": "integration-requirements-documented",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Integration requirements must be documented"
+                    },
+                    {
+                        "field": "technical-discovery-completed",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Technical discovery must be completed"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "GTM Strategy Template",
+                    "url": "/docs/gtm-strategy",
+                    "type": "internal"
+                },
+                {
+                    "title": "Technical Architecture Guide",
+                    "url": "/docs/technical-architecture",
+                    "type": "internal"
+                }
+            ]
+        },
+        {
+            "id": "phase-1c-training",
+            "title": "Phase 1C: Training & Enablement (Weeks 7-12)",
+            "description": "Sales team training, product knowledge validation, and enablement activities",
+            "fields": [
+                {
+                    "id": "sales-training-completed",
+                    "type": "radio",
+                    "label": "Has sales team training been completed?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "sales-team-size-trained",
+                    "type": "number",
+                    "label": "Number of sales team members trained",
+                    "required": true,
+                    "helpText": "Total number of sales team members who completed training"
+                },
+                {
+                    "id": "sales-team-certified",
+                    "type": "radio",
+                    "label": "Has the sales team been certified on Kuiper products?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "product-knowledge-validated",
+                    "type": "radio",
+                    "label": "Has product knowledge been validated (e.g., through assessments)?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "sales-materials-provided",
+                    "type": "radio",
+                    "label": "Have sales materials and collateral been provided?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "demo-environment-access",
+                    "type": "radio",
+                    "label": "Does the sales team have access to demo environments?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "portal-access-confirmed",
+                    "type": "radio",
+                    "label": "Has portal access been confirmed for all team members?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "support-escalation-process-trained",
+                    "type": "radio",
+                    "label": "Has the team been trained on support and escalation processes?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "first-customer-pitch-ready",
+                    "type": "radio",
+                    "label": "Is the team ready to pitch to their first customer?",
+                    "required": true,
+                    "options": [
+                        "Yes",
+                        "No"
+                    ]
+                },
+                {
+                    "id": "phase-1c-notes",
+                    "type": "textarea",
+                    "label": "Phase 1C Notes",
+                    "required": false,
+                    "helpText": "Additional notes, concerns, or observations from Phase 1C"
+                }
+            ],
+            "passFailCriteria": {
+                "type": "automatic",
+                "rules": [
+                    {
+                        "field": "sales-team-certified",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Sales team must be certified on Kuiper products"
+                    },
+                    {
+                        "field": "product-knowledge-validated",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Product knowledge must be validated"
+                    },
+                    {
+                        "field": "portal-access-confirmed",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Portal access must be confirmed for all team members"
+                    },
+                    {
+                        "field": "first-customer-pitch-ready",
+                        "operator": "equals",
+                        "value": "Yes",
+                        "failureMessage": "Team must be ready to pitch to first customer"
+                    }
+                ]
+            },
+            "documentationLinks": [
+                {
+                    "title": "Sales Training Curriculum",
+                    "url": "/docs/sales-training",
+                    "type": "internal"
+                },
+                {
+                    "title": "Product Certification Guide",
+                    "url": "/docs/product-certification",
+                    "type": "internal"
+                }
+            ]
+        }
+    ],
+    "validation": {
+        "requiredSections": [
+            "phase-1a-kickoff",
+            "phase-1b-gtm-discovery",
+            "phase-1c-training"
+        ],
+        "minimumPassingSections": 3,
+        "allowPartialSubmission": false,
+        "specialRules": [
+            {
+                "description": "All three phases must pass for Gate 1 completion",
+                "condition": "all-sections-pass",
+                "action": "require-all-passing"
+            }
+        ]
+    },
+    "documentation": [
+        {
+            "title": "Gate 1 Overview",
+            "url": "/docs/gate-1-overview",
+            "type": "internal"
+        },
+        {
+            "title": "Ready to Sell Criteria",
+            "url": "/docs/ready-to-sell-criteria",
+            "type": "internal"
+        }
+    ]
+}
