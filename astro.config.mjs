@@ -5,8 +5,16 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+    // Exclude test files from pages
+    srcDir: './src',
+    publicDir: './public',
     vite: {
         plugins: [tailwindcss()],
+        ssr: {
+            // Exclude test dependencies from SSR
+            noExternal: [],
+            external: ['vitest', '@testing-library/react', '@testing-library/jest-dom', '@testing-library/user-event']
+        },
         build: {
             // Enable code splitting
             rollupOptions: {

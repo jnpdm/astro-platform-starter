@@ -3,6 +3,8 @@
  * POST: Create a new questionnaire submission
  */
 
+export const prerender = false;
+
 import type { APIRoute } from 'astro';
 import { saveSubmission, StorageError } from '../../utils/storage';
 import type { QuestionnaireSubmission } from '../../types/submission';

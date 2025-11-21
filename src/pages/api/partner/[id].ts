@@ -4,13 +4,13 @@
  * PUT: Update a specific partner (with access control)
  */
 
+export const prerender = false;
+
 import type { APIRoute } from 'astro';
 import { getPartner, savePartner, StorageError } from '../../../utils/storage';
 import { canAccessPartner, canEditPartner } from '../../../utils/rbac';
 import { getUserSession } from '../../../middleware/auth';
 import type { PartnerRecord } from '../../../types/partner';
-
-export const prerender = false;
 
 /**
  * GET /api/partner/[id]

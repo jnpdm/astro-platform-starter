@@ -4,6 +4,8 @@
  * POST: Create a new partner
  */
 
+export const prerender = false;
+
 import type { APIRoute } from 'astro';
 import { listPartners, savePartner, StorageError } from '../../utils/storage';
 import { filterPartnersByRole } from '../../utils/rbac';
