@@ -43,26 +43,19 @@ const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.r
             <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                 <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
                     <div class="text-gray-400 text-sm font-medium mb-1">Total Partners</div>
-                    <div class="text-3xl font-bold">{totalPartners}</div>
+                    <div id="total-partners" class="text-3xl font-bold">0</div>
                 </div>
 
                 <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
                     <div class="text-gray-400 text-sm font-medium mb-1">Upcoming Launches</div>
-                    <div class="text-3xl font-bold text-blue-400">{upcomingLaunches}</div>
+                    <div id="upcoming-launches" class="text-3xl font-bold text-blue-400">0</div>
                     <div class="text-gray-400 text-xs mt-1">Next 60 days</div>
                 </div>
 
                 <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
                     <div class="text-gray-400 text-sm font-medium mb-2">Partners by Gate</div>
-                    <div class="space-y-1">
-                        {
-                            partnersByGateCount.slice(0, 3).map(({ name, count }) => (
-                                <div class="flex justify-between text-sm">
-                                    <span class="text-gray-300">{name.replace(/^Gate \d+: /, '')}</span>
-                                    <span class="font-semibold">{count}</span>
-                                </div>
-                            ))
-                        }
+                    <div id="partners-by-gate-summary" class="space-y-1">
+                        <p class="text-gray-500 text-sm">Loading...</p>
                     </div>
                 </div>
             </div>
@@ -71,122 +64,19 @@ const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.r
                 <!-- Partners by Gate Section -->
                 <div class="lg:col-span-2">
                     <h2 class="text-2xl font-bold mb-4">Partners by Gate</h2>
-
-                    {
-                        totalPartners === 0 ? (
-                            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
-                                <p class="text-gray-400 mb-4">No partners found</p>
-                                <a href="/api/partners" class="text-blue-400 hover:text-blue-300">
-                                    Create your first partner
-                                </a>
-                            </div>
-                        ) : (
-                            <div class="space-y-6">
-                                {gateOrder.map((gateId) => {
-                                    const gatePartners = partnersByGate[gateId] || [];
-                                    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
-
-                                    if (gatePartners.length === 0) return null;
-
-                                    return (
-                                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-                                            <div class="flex items-center justify-between mb-4">
-                                                <h3 class="text-xl font-semibold">{gateInfo?.name || gateId}</h3>
-                                                <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
-                                                    {gatePartners.length} {gatePartners.length === 1 ? 'partner' : 'partners'}
-                                                </span>
-                                            </div>
-
-                                            <div class="grid grid-cols-1 gap-4">
-                                                {gatePartners.map((partner) => {
-                                                    const currentGateStatus = partner.gates?.[gateId]?.status || 'not-started';
-
-                                                    return (
-                                                        <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
-                                                            <div class="flex items-start justify-between mb-2">
-                                                                <div class="flex-1">
-                                                                    <h4 class="font-semibold text-lg mb-1">
-                                                                        <a href={`/partner/${partner.id}`} class="hover:text-blue-400 transition-colors">
-                                                                            {partner.partnerName}
-                                                                        </a>
-                                                                    </h4>
-                                                                    <div class="flex flex-wrap gap-3 text-sm text-gray-400">
-                                                                        <span>
-                                                                            PAM: <span class="text-gray-300">{partner.pamOwner}</span>
-                                                                        </span>
-                                                                        <span>•</span>
-                                                                        <span>
-                                                                            Tier: <span class="text-gray-300 uppercase">{partner.tier}</span>
-                                                                        </span>
-                                                                        {partner.targetLaunchDate && (
-                                                                            <>
-                                                                                <span>•</span>
-                                                                                <span>
-                                                                                    Launch:{' '}
-                                                                                    <span class="text-gray-300">{formatDate(partner.targetLaunchDate)}</span>
-                                                                                </span>
-                                                                            </>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
-                                                                <span class={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(currentGateStatus)}`}>
-                                                                    {currentGateStatus.replace('-', ' ').toUpperCase()}
-                                                                </span>
-                                                            </div>
-
-                                                            {partner.gates?.[gateId]?.blockers && partner.gates[gateId].blockers!.length > 0 && (
-                                                                <div class="mt-2 text-sm text-orange-400">
-                                                                    ⚠️ {partner.gates[gateId].blockers!.length} blocker(s)
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        )
-                    }
+                    <div id="partners-by-gate-list">
+                        <p class="text-gray-500">Loading partners...</p>
+                    </div>
                 </div>
 
                 <!-- Recent Activity Feed -->
                 <div class="lg:col-span-1">
                     <h2 class="text-2xl font-bold mb-4">Recent Activity</h2>
-
-                    {
-                        recentActivity.length === 0 ? (
-                            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
-                                <p class="text-gray-400">No recent activity</p>
-                            </div>
-                        ) : (
-                            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
-                                <div class="space-y-4">
-                                    {recentActivity.map((activity) => (
-                                        <div class="border-b border-gray-700 last:border-b-0 pb-4 last:pb-0">
-                                            <div class="flex items-start gap-3">
-                                                <div class="flex-shrink-0 w-2 h-2 bg-blue-500 rounded-full mt-2" />
-                                                <div class="flex-1 min-w-0">
-                                                    <p class="text-sm text-gray-300">
-                                                        <a href={`/partner/${activity.partnerId}`} class="font-medium hover:text-blue-400">
-                                                            {activity.partnerName}
-                                                        </a>
-                                                    </p>
-                                                    <p class="text-sm text-gray-400 mt-1">{activity.description}</p>
-                                                    <div class="flex items-center gap-2 mt-1 text-xs text-gray-500">
-                                                        <span>{activity.actor}</span>
-                                                        <span>•</span>
-                                                        <span>{getRelativeTime(activity.timestamp)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )
-                    }
+                    <div id="recent-activity">
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
+                            <p class="text-gray-400">Loading activity...</p>
+                        </div>
+                    </div>
 
                     <!-- Quick Links -->
                     <div class="mt-6 bg-gray-800/50 border border-gray-700 rounded-lg p-4">
@@ -194,14 +84,260 @@ const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.r
                         <div class="space-y-2">
                             <a href="/documentation" class="block text-sm text-blue-400 hover:text-blue-300"> 📚 Documentation Hub </a>
                             <a href="/reports" class="block text-sm text-blue-400 hover:text-blue-300"> 📊 Reports & Analytics </a>
-                            <a href="/api/partners" class="block text-sm text-blue-400 hover:text-blue-300"> ➕ Create New Partner </a>
+                            <a href="/partner/new" class="block text-sm text-blue-400 hover:text-blue-300"> ➕ Create New Partner </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    <!-- End Dashboard Content -->
+
+    <script>
+        // Gate configuration
+        const gateOrder = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
+        const gateNames = {
+            'pre-contract': 'Pre-Contract',
+            'gate-0': 'Gate 0: Kickoff',
+            'gate-1': 'Gate 1: Ready to Sell',
+            'gate-2': 'Gate 2: Ready to Order',
+            'gate-3': 'Gate 3: Ready to Deliver',
+            'post-launch': 'Post-Launch'
+        };
+
+        // Client-side data loading
+        async function loadDashboardData() {
+            const loadingState = document.getElementById('loading-state');
+            const errorState = document.getElementById('error-state');
+            const errorMessage = document.getElementById('error-message');
+            const dashboardContent = document.getElementById('dashboard-content');
+
+            try {
+                // Show loading
+                loadingState?.classList.remove('hidden');
+                errorState?.classList.add('hidden');
+                dashboardContent?.classList.add('hidden');
+
+                // Fetch partner data
+                const response = await fetch('/api/partners');
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load partners: ${response.status} ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                // Handle the API response format {success: true, data: [...]}
+                const partners = result.data || result || [];
+
+                // Hide loading, show content
+                loadingState?.classList.add('hidden');
+                dashboardContent?.classList.remove('hidden');
+
+                // Render dashboard with partner data
+                renderDashboard(partners);
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+
+                // Show error state
+                loadingState?.classList.add('hidden');
+                errorState?.classList.remove('hidden');
+                if (errorMessage) {
+                    errorMessage.textContent = error instanceof Error ? error.message : 'Failed to load partner data';
+                }
+            }
+        }
+
+        function renderDashboard(partners) {
+            // Update total partners
+            const totalPartnersEl = document.getElementById('total-partners');
+            if (totalPartnersEl) {
+                totalPartnersEl.textContent = partners.length.toString();
+            }
+
+            // Calculate upcoming launches (next 60 days)
+            const now = new Date();
+            const sixtyDaysFromNow = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+            const upcomingLaunches = partners.filter((p) => {
+                if (!p.targetLaunchDate) return false;
+                const launchDate = new Date(p.targetLaunchDate);
+                return launchDate >= now && launchDate <= sixtyDaysFromNow;
+            }).length;
+
+            const upcomingLaunchesEl = document.getElementById('upcoming-launches');
+            if (upcomingLaunchesEl) {
+                upcomingLaunchesEl.textContent = upcomingLaunches.toString();
+            }
+
+            // Group partners by gate
+            const partnersByGate = {};
+            gateOrder.forEach((gate) => {
+                partnersByGate[gate] = [];
+            });
+
+            partners.forEach((partner) => {
+                const gate = partner.currentGate || 'pre-contract';
+                if (partnersByGate[gate]) {
+                    partnersByGate[gate].push(partner);
+                }
+            });
+
+            // Render partners by gate summary
+            renderPartnersByGateSummary(partnersByGate);
+
+            // Render partners by gate list
+            renderPartnersByGateList(partnersByGate);
+
+            // Render recent activity
+            renderRecentActivity(partners);
+        }
+
+        function renderPartnersByGateSummary(partnersByGate) {
+            const summaryEl = document.getElementById('partners-by-gate-summary');
+            if (!summaryEl) return;
+
+            const topGates = gateOrder
+                .map((gate) => ({
+                    name: gateNames[gate],
+                    count: partnersByGate[gate].length
+                }))
+                .filter((g) => g.count > 0)
+                .slice(0, 3);
+
+            if (topGates.length === 0) {
+                summaryEl.innerHTML = '<p class="text-gray-500 text-sm">No partners yet</p>';
+                return;
+            }
+
+            summaryEl.innerHTML = topGates
+                .map(
+                    ({ name, count }) => `
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-300">${name.replace(/^Gate \d+: /, '')}</span>
+                    <span class="font-semibold">${count}</span>
+                </div>
+            `
+                )
+                .join('');
+        }
+
+        function renderPartnersByGateList(partnersByGate) {
+            const listEl = document.getElementById('partners-by-gate-list');
+            if (!listEl) return;
+
+            const totalPartners = Object.values(partnersByGate).reduce((sum, arr) => sum + arr.length, 0);
+
+            if (totalPartners === 0) {
+                listEl.innerHTML = `
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-8 text-center">
+                        <p class="text-gray-400 mb-4">No partners found</p>
+                        <a href="/partner/new" class="text-blue-400 hover:text-blue-300">
+                            Create your first partner
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = gateOrder
+                .map((gateId) => {
+                    const gatePartners = partnersByGate[gateId] || [];
+                    if (gatePartners.length === 0) return '';
+
+                    const partnersHtml = gatePartners
+                        .map((partner) => {
+                            const currentGateStatus = partner.gates?.[gateId]?.status || 'not-started';
+                            const statusColor = getStatusColor(currentGateStatus);
+
+                            return `
+                        <div class="bg-gray-900/50 border border-gray-600 rounded-lg p-4 hover:border-gray-500 transition-colors">
+                            <div class="flex items-start justify-between mb-2">
+                                <div class="flex-1">
+                                    <h4 class="font-semibold text-lg mb-1">
+                                        <a href="/partner/${partner.id}" class="hover:text-blue-400 transition-colors">
+                                            ${partner.partnerName}
+                                        </a>
+                                    </h4>
+                                    <div class="flex flex-wrap gap-3 text-sm text-gray-400">
+                                        <span>PAM: <span class="text-gray-300">${partner.pamOwner}</span></span>
+                                        <span>•</span>
+                                        <span>Tier: <span class="text-gray-300 uppercase">${partner.tier}</span></span>
+                                        ${
+                                            partner.targetLaunchDate
+                                                ? `
+                                            <span>•</span>
+                                            <span>Launch: <span class="text-gray-300">${formatDate(partner.targetLaunchDate)}</span></span>
+                                        `
+                                                : ''
+                                        }
+                                    </div>
+                                </div>
+                                <span class="px-3 py-1 rounded-full text-xs font-medium ${statusColor}">
+                                    ${currentGateStatus.replace('-', ' ').toUpperCase()}
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                        })
+                        .join('');
+
+                    return `
+                    <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 mb-6">
+                        <div class="flex items-center justify-between mb-4">
+                            <h3 class="text-xl font-semibold">${gateNames[gateId]}</h3>
+                            <span class="bg-gray-700 text-gray-300 px-3 py-1 rounded-full text-sm font-medium">
+                                ${gatePartners.length} ${gatePartners.length === 1 ? 'partner' : 'partners'}
+                            </span>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4">
+                            ${partnersHtml}
+                        </div>
+                    </div>
+                `;
+                })
+                .join('');
+
+            listEl.innerHTML = html;
+        }
+
+        function renderRecentActivity(partners) {
+            const activityEl = document.getElementById('recent-activity');
+            if (!activityEl) return;
+
+            // For now, show no activity message
+            activityEl.innerHTML = `
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 text-center">
+                    <p class="text-gray-400">No recent activity</p>
+                </div>
+            `;
+        }
+
+        function getStatusColor(status) {
+            switch (status) {
+                case 'passed':
+                    return 'bg-green-600';
+                case 'in-progress':
+                    return 'bg-yellow-600';
+                case 'failed':
+                    return 'bg-red-600';
+                case 'blocked':
+                    return 'bg-orange-600';
+                default:
+                    return 'bg-gray-600';
+            }
+        }
+
+        function formatDate(date) {
+            if (!date) return 'Not set';
+            const d = typeof date === 'string' ? new Date(date) : date;
+            return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        // Retry button handler
+        document.getElementById('retry-button')?.addEventListener('click', loadDashboardData);
+
+        // Load data on page load
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
 </Layout>
 
 <script>
