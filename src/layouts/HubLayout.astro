@@ -50,9 +50,19 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
         <script>
             import { transformUser, storeUserSession, clearUserSession, isProtectedRoute, getLoginRedirectUrl } from '../middleware/auth';
 
-            // Initialize Netlify Identity
-            if (window.netlifyIdentity) {
+            // Wait for Netlify Identity widget to load
+            function initializeNetlifyIdentity() {
+                if (!window.netlifyIdentity) {
+                    console.warn('Netlify Identity widget not loaded yet, retrying...');
+                    setTimeout(initializeNetlifyIdentity, 100);
+                    return;
+                }
+
+                console.log('Netlify Identity widget loaded successfully');
+
+                // Initialize Netlify Identity event listeners
                 window.netlifyIdentity.on('init', (user) => {
+                    console.log('Netlify Identity initialized', user ? 'with user' : 'without user');
                     if (user) {
                         const authUser = transformUser(user);
                         if (authUser) {
@@ -62,6 +72,7 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                 });
 
                 window.netlifyIdentity.on('login', (user) => {
+                    console.log('User logged in:', user?.email);
                     const authUser = transformUser(user);
                     if (authUser) {
                         storeUserSession(authUser);
@@ -79,6 +90,7 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                 });
 
                 window.netlifyIdentity.on('logout', () => {
+                    console.log('User logged out');
                     clearUserSession();
                     window.location.href = '/';
                 });
@@ -94,23 +106,35 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                 if (isProtectedRoute(currentPath) && !currentUser) {
                     window.location.href = getLoginRedirectUrl(currentPath);
                 }
+
+                // Initialize the widget
+                window.netlifyIdentity.init();
             }
 
-            // Global login/logout functions
+            // Global login/logout functions (available immediately)
             window.kuiperAuth = {
                 login: () => {
                     if (window.netlifyIdentity) {
+                        console.log('Opening login dialog');
                         window.netlifyIdentity.open('login');
+                    } else {
+                        console.error('Netlify Identity widget not loaded');
                     }
                 },
                 logout: () => {
                     if (window.netlifyIdentity) {
+                        console.log('Logging out');
                         window.netlifyIdentity.logout();
+                    } else {
+                        console.error('Netlify Identity widget not loaded');
                     }
                 },
                 signup: () => {
                     if (window.netlifyIdentity) {
+                        console.log('Opening signup dialog');
                         window.netlifyIdentity.open('signup');
+                    } else {
+                        console.error('Netlify Identity widget not loaded');
                     }
                 },
                 getCurrentUser: () => {
@@ -120,6 +144,13 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                     return null;
                 }
             };
+
+            // Start initialization when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeNetlifyIdentity);
+            } else {
+                initializeNetlifyIdentity();
+            }
         </script>
     </body>
 </html>

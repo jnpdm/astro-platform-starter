@@ -39,11 +39,10 @@ export default defineConfig({
             chunkSizeWarningLimit: 600
         }
     },
+    output: 'server', // Enable SSR for API routes
     integrations: [react()],
     adapter: netlify({
-        devFeatures: {
-            environmentVariables: true
-        }
+        edgeMiddleware: false
     }),
     // Enable build optimizations
     build: {

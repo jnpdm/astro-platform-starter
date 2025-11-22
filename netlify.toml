@@ -8,11 +8,8 @@
   NODE_VERSION = "18.20.8"
   NPM_VERSION = "9.0.0"
 
-# Redirect API routes to Netlify Functions
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+# API routes are handled by Astro's Netlify adapter automatically
+# No manual redirect needed - the adapter generates the correct _redirects file
 
 # Security headers
 [[headers]]
