@@ -100,6 +100,14 @@ export async function savePartner(partner: PartnerRecord): Promise<void> {
             await store.setJSON(partner.id, updatedPartner);
         });
     } catch (error) {
+        // In development, Netlify Blobs might not be available
+        // Just log the partner data instead of throwing error
+        if (import.meta.env.DEV) {
+            console.warn('Netlify Blobs not available in development');
+            console.log('Would save partner:', partner);
+            return; // Success in dev mode
+        }
+
         throw new StorageError(
             `Failed to save partner ${partner.id}`,
             'SAVE_PARTNER_ERROR',
@@ -158,6 +166,12 @@ export async function deletePartner(partnerId: string): Promise<void> {
             await store.delete(partnerId);
         });
     } catch (error) {
+        // In development, Netlify Blobs might not be available
+        if (import.meta.env.DEV) {
+            console.warn(`Netlify Blobs not available in development, would delete partner ${partnerId}`);
+            return; // Success in dev mode
+        }
+
         throw new StorageError(
             `Failed to delete partner ${partnerId}`,
             'DELETE_PARTNER_ERROR',
