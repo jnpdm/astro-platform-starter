@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-import Layout from '../layouts/Layout.astro';
+import HubLayout from '../layouts/HubLayout.astro';
 import { getUserSession } from '../middleware/auth';
 import { getRoleDashboardMessage } from '../utils/rbac';
 
@@ -16,7 +16,7 @@ const redirectParam = Astro.url.searchParams.get('redirect');
 const errorParam = Astro.url.searchParams.get('error');
 ---
 
-<Layout title="Dashboard - Kuiper Partner Onboarding Hub">
+<HubLayout title="Dashboard" description="Track partner progress through the gated onboarding journey">
     <div class="py-8">
         <h1 class="text-4xl font-bold mb-2">Partner Onboarding Dashboard</h1>
         <p class="text-gray-300 mb-4">Track partner progress through the gated onboarding journey</p>
@@ -399,4 +399,4 @@ const errorParam = Astro.url.searchParams.get('error');
         // Load data on page load
         document.addEventListener('DOMContentLoaded', loadDashboardData);
     </script>
-</Layout>
+</HubLayout>
