@@ -118,6 +118,56 @@ describe('Astro Middleware', () => {
         });
     });
 
+    describe('API routes - unauthenticated', () => {
+        it('should return 401 JSON for unauthenticated API requests', async () => {
+            const context = createMockContext('/api/partners');
+            vi.mocked(isProtectedRoute).mockReturnValue(true);
+            vi.mocked(getUserSession).mockReturnValue(null);
+
+            const result = await onRequest(context as any, mockNext);
+
+            expect(result).toBeInstanceOf(Response);
+            expect((result as Response).status).toBe(401);
+            expect((result as Response).headers.get('Content-Type')).toBe('application/json');
+
+            const body = await (result as Response).json();
+            expect(body).toEqual({
+                success: false,
+                error: 'Authentication required',
+                code: 'UNAUTHORIZED'
+            });
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+
+        it('should return 403 JSON for unauthorized API requests', async () => {
+            const mockUser: AuthUser = {
+                id: 'user-123',
+                email: 'test@example.com',
+                name: 'Test User',
+                role: 'PAM',
+            };
+
+            const context = createMockContext('/api/partners');
+            vi.mocked(isProtectedRoute).mockReturnValue(true);
+            vi.mocked(getUserSession).mockReturnValue(mockUser);
+            vi.mocked(canAccessRoute).mockReturnValue(false);
+
+            const result = await onRequest(context as any, mockNext);
+
+            expect(result).toBeInstanceOf(Response);
+            expect((result as Response).status).toBe(403);
+            expect((result as Response).headers.get('Content-Type')).toBe('application/json');
+
+            const body = await (result as Response).json();
+            expect(body).toEqual({
+                success: false,
+                error: 'Access denied',
+                code: 'FORBIDDEN'
+            });
+            expect(mockNext).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Middleware execution order', () => {
         it('should execute before page rendering', async () => {
             const context = createMockContext('/partner/123');
