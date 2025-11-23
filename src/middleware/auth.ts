@@ -3,6 +3,13 @@
  * Protects routes and manages user sessions with role-based access
  */
 
+import {
+    handleStorageError,
+    isSessionCorrupted,
+    clearCorruptedSession,
+    logAuthError,
+} from '../utils/auth0-errors';
+
 export type UserRole = 'PAM' | 'PDM' | 'TPM' | 'PSM' | 'TAM' | 'Admin';
 
 export interface AuthUser {
@@ -132,47 +139,256 @@ export function getLoginRedirectUrl(currentPath: string): string {
 }
 
 /**
- * Store user session in cookie or localStorage
- * Note: In production, this should use secure HTTP-only cookies
+ * Session metadata for tracking expiration
+ */
+interface SessionMetadata {
+    user: AuthUser;
+    timestamp: number;
+    expiresAt?: number;
+}
+
+/**
+ * Session expiration time in milliseconds (24 hours)
+ */
+const SESSION_EXPIRATION_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Validate user session data
+ * Checks if the session data has all required fields
+ */
+function isValidUserSession(data: any): data is AuthUser {
+    return (
+        data &&
+        typeof data === 'object' &&
+        typeof data.id === 'string' &&
+        typeof data.email === 'string' &&
+        typeof data.role === 'string' &&
+        data.id.length > 0 &&
+        data.email.length > 0
+    );
+}
+
+/**
+ * Check if session has expired
+ * Returns true if session is expired or invalid
+ */
+function isSessionExpired(timestamp?: number, expiresAt?: number): boolean {
+    if (!timestamp) {
+        return true;
+    }
+
+    const now = Date.now();
+
+    // Check explicit expiration time if provided
+    if (expiresAt && now > expiresAt) {
+        return true;
+    }
+
+    // Check if session is older than SESSION_EXPIRATION_MS
+    if (now - timestamp > SESSION_EXPIRATION_MS) {
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Detect and handle corrupted session data
+ * Returns true if corruption was detected and handled
+ */
+function handleCorruptedSession(error: unknown, context: string): boolean {
+    console.error(`Session corruption detected in ${context}:`, error);
+
+    // Clear the corrupted session
+    try {
+        clearUserSession();
+        console.log('Corrupted session data cleared');
+        return true;
+    } catch (clearError) {
+        console.error('Failed to clear corrupted session:', clearError);
+        return false;
+    }
+}
+
+/**
+ * Check if localStorage is available and accessible
+ * Returns false in private browsing mode or when localStorage is disabled
+ */
+function isLocalStorageAvailable(): boolean {
+    if (typeof window === 'undefined') {
+        return false;
+    }
+
+    try {
+        const testKey = '__kuiper_storage_test__';
+        localStorage.setItem(testKey, 'test');
+        localStorage.removeItem(testKey);
+        return true;
+    } catch (error) {
+        console.warn('localStorage is not available:', error);
+        return false;
+    }
+}
+
+/**
+ * Store user session in localStorage
+ * Works with Auth0 user data and maintains backward compatibility
+ * Handles localStorage errors (quota exceeded, access denied)
  */
 export function storeUserSession(user: AuthUser): void {
-    if (typeof window !== 'undefined') {
-        try {
-            localStorage.setItem('kuiper_user', JSON.stringify(user));
-            localStorage.setItem('kuiper_user_role', user.role);
-        } catch (error) {
-            console.error('Failed to store user session:', error);
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    // Check if localStorage is available
+    if (!isLocalStorageAvailable()) {
+        console.error('localStorage is not available. Session will not persist.');
+        return;
+    }
+
+    try {
+        // Validate user data before storing
+        if (!isValidUserSession(user)) {
+            logAuthError(new Error('Invalid user session data'), {
+                errorType: 'SessionValidationError',
+                userId: (user as any)?.id,
+                email: (user as any)?.email,
+            });
+            return;
+        }
+
+        // Store with metadata for expiration tracking
+        const sessionData: SessionMetadata = {
+            user,
+            timestamp: Date.now(),
+            expiresAt: Date.now() + SESSION_EXPIRATION_MS,
+        };
+
+        localStorage.setItem('kuiper_user', JSON.stringify(user));
+        localStorage.setItem('kuiper_user_role', user.role);
+        localStorage.setItem('kuiper_session_metadata', JSON.stringify({
+            timestamp: sessionData.timestamp,
+            expiresAt: sessionData.expiresAt,
+        }));
+    } catch (error) {
+        // Use centralized storage error handling
+        handleStorageError(error);
+
+        // Attempt retry for quota errors
+        if (error instanceof Error && error.name === 'QuotaExceededError') {
+            try {
+                clearUserSession();
+                localStorage.setItem('kuiper_user', JSON.stringify(user));
+                localStorage.setItem('kuiper_user_role', user.role);
+                localStorage.setItem('kuiper_session_metadata', JSON.stringify({
+                    timestamp: Date.now(),
+                    expiresAt: Date.now() + SESSION_EXPIRATION_MS,
+                }));
+                console.log('Session stored successfully after clearing old data');
+            } catch (retryError) {
+                logAuthError(retryError, {
+                    errorType: 'SessionStorageRetryError',
+                    userId: user.id,
+                    email: user.email,
+                });
+            }
         }
     }
 }
 
 /**
  * Retrieve user session from storage
+ * Validates and returns Auth0 session data
+ * Detects and clears corrupted or expired session data
  */
 export function getUserSession(): AuthUser | null {
-    if (typeof window !== 'undefined') {
-        try {
-            const userJson = localStorage.getItem('kuiper_user');
-            if (userJson) {
-                return JSON.parse(userJson) as AuthUser;
-            }
-        } catch (error) {
-            console.error('Failed to retrieve user session:', error);
-        }
+    if (typeof window === 'undefined') {
+        return null;
     }
-    return null;
+
+    // Check if localStorage is available
+    if (!isLocalStorageAvailable()) {
+        return null;
+    }
+
+    // Use centralized corruption check
+    if (isSessionCorrupted()) {
+        clearCorruptedSession();
+        return null;
+    }
+
+    try {
+        const userJson = localStorage.getItem('kuiper_user');
+        const metadataJson = localStorage.getItem('kuiper_session_metadata');
+
+        if (!userJson) {
+            return null;
+        }
+
+        // Parse and validate session metadata
+        let metadata: { timestamp?: number; expiresAt?: number } = {};
+        if (metadataJson) {
+            try {
+                metadata = JSON.parse(metadataJson);
+
+                // Check if session has expired (only if metadata exists)
+                if (isSessionExpired(metadata.timestamp, metadata.expiresAt)) {
+                    console.log('Session expired, clearing');
+                    clearUserSession();
+                    return null;
+                }
+            } catch (metadataError) {
+                console.warn('Invalid session metadata, ignoring');
+            }
+        }
+        // If no metadata exists, allow the session (backward compatibility)
+
+        // Parse user data
+        let userData: any;
+        try {
+            userData = JSON.parse(userJson);
+        } catch (parseError) {
+            handleCorruptedSession(parseError, 'getUserSession - JSON parse');
+            return null;
+        }
+
+        // Validate session data structure
+        if (!isValidUserSession(userData)) {
+            handleCorruptedSession(new Error('Invalid session structure'), 'getUserSession - validation');
+            return null;
+        }
+
+        return userData;
+    } catch (error) {
+        handleCorruptedSession(error, 'getUserSession - general');
+        return null;
+    }
 }
 
 /**
  * Clear user session
+ * Removes all Auth0 session data from localStorage
  */
 export function clearUserSession(): void {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') {
+        return;
+    }
+
+    try {
+        localStorage.removeItem('kuiper_user');
+        localStorage.removeItem('kuiper_user_role');
+        localStorage.removeItem('kuiper_session_metadata');
+        // The Auth0 SDK manages its own cache separately
+    } catch (error) {
+        console.error('Failed to clear user session:', error);
+        // Even if removal fails, try to set to empty values
         try {
-            localStorage.removeItem('kuiper_user');
-            localStorage.removeItem('kuiper_user_role');
-        } catch (error) {
-            console.error('Failed to clear user session:', error);
+            localStorage.setItem('kuiper_user', '');
+            localStorage.setItem('kuiper_user_role', '');
+            localStorage.setItem('kuiper_session_metadata', '');
+        } catch (fallbackError) {
+            // If even this fails, localStorage is likely inaccessible
+            console.error('localStorage is inaccessible');
         }
     }
 }

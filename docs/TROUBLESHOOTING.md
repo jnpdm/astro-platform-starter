@@ -9,36 +9,49 @@
 **Symptoms**: Login button doesn't work, or redirects to error page
 
 **Possible Causes**:
-- Netlify Identity not configured
-- User not added to Identity
+- Auth0 not configured correctly
+- User not added to Auth0
 - Browser cookies disabled
 - Network connectivity issues
+- Incorrect callback URLs
 
 **Solutions**:
 
-1. **Verify Netlify Identity is enabled**
-   - Go to Netlify Dashboard → Site Settings → Identity
-   - Ensure Identity is enabled
-   - Check registration preferences
+1. **Verify Auth0 configuration**
+   - Check environment variables are set correctly
+   - Verify `PUBLIC_AUTH0_DOMAIN` and `PUBLIC_AUTH0_CLIENT_ID` are present
+   - Ensure callback URLs match your environment (localhost or production)
 
-2. **Check user exists**
-   - Go to Netlify Dashboard → Identity → Users
+2. **Check user exists in Auth0**
+   - Go to Auth0 Dashboard → User Management → Users
    - Verify your email is listed
    - Resend invitation if needed
 
-3. **Clear browser cache and cookies**
+3. **Verify callback URLs**
+   - Go to Auth0 Dashboard → Applications → Your App → Settings
+   - Ensure Allowed Callback URLs includes your domain
+   - For local: `http://localhost:4321`
+   - For production: `https://your-domain.netlify.app`
+
+4. **Clear browser cache and cookies**
    ```
    Chrome: Settings → Privacy → Clear browsing data
    Firefox: Settings → Privacy → Clear Data
    Safari: Preferences → Privacy → Manage Website Data
    ```
 
-4. **Try incognito/private mode**
+5. **Try incognito/private mode**
    - This helps identify if browser extensions are interfering
 
-5. **Check network connectivity**
+6. **Check network connectivity**
    - Verify you can access other websites
-   - Check if firewall is blocking Netlify
+   - Check if firewall is blocking Auth0
+   - Try accessing `https://your-tenant.us.auth0.com` directly
+
+7. **Check browser console for errors**
+   - Open Developer Tools (F12)
+   - Look for Auth0-related errors
+   - Note error codes (e.g., `access_denied`, `invalid_request`)
 
 #### Logged Out Unexpectedly
 
@@ -68,31 +81,42 @@
 **Symptoms**: Cannot access expected features, see wrong partners
 
 **Possible Causes**:
-- Role not set in Netlify Identity
+- Role not set in Auth0
 - Role metadata incorrect
 - Cache not cleared after role change
+- Token not refreshed
 
 **Solutions**:
 
-1. **Verify role in Netlify Identity**
-   - Go to Netlify Dashboard → Identity → Users
+1. **Verify role in Auth0**
+   - Go to Auth0 Dashboard → User Management → Users
    - Click on your user
-   - Check user metadata for role field
-   - Should be: `{ "role": "PAM" }` (or PDM, TPM, PSM, TAM)
+   - Scroll to **Metadata** section
+   - Check `app_metadata` for role field
+   - Should be: `{ "role": "PAM" }` (or PDM, TPM, PSM, TAM, Admin)
 
-2. **Update role metadata**
+2. **Update role metadata in Auth0**
+   - In the user's `app_metadata`, add or update:
    ```json
    {
-     "role": "PAM",
-     "name": "Your Name"
+     "role": "PAM"
    }
    ```
+   - Click **Save**
 
 3. **Log out and log back in**
-   - Clear browser cache
-   - Log out completely
-   - Log back in
-   - Verify role is correct
+   - Clear browser cache and localStorage
+   - Log out completely from the application
+   - Log back in to get fresh token with updated role
+   - Verify role is correct in the header
+
+4. **Clear session storage**
+   ```javascript
+   // In browser console
+   localStorage.clear();
+   sessionStorage.clear();
+   ```
+   - Then refresh the page and log in again
 
 ### Data Persistence Issues
 
@@ -476,6 +500,69 @@
 - Contact admin if you should have access
 - Check if you're accessing the right partner
 
+### Auth0-Specific Errors
+
+#### "Login required"
+
+**Meaning**: Your session has expired or you're not logged in
+
+**Solution**: Click "Sign In" to authenticate with Auth0
+
+#### "Consent required"
+
+**Meaning**: Auth0 requires user consent for the application
+
+**Solution**: 
+- Click "Accept" on the Auth0 consent screen
+- Contact admin if consent screen keeps appearing
+
+#### "Access denied"
+
+**Meaning**: Auth0 denied access (user cancelled login or insufficient permissions)
+
+**Solution**:
+- Try logging in again
+- Verify your account has the correct permissions
+- Contact admin if you should have access
+
+#### "Invalid state"
+
+**Meaning**: OAuth state parameter mismatch (possible CSRF attack or session issue)
+
+**Solution**:
+- Clear browser cache and cookies
+- Try logging in again
+- If persists, contact support
+
+#### "Configuration error"
+
+**Meaning**: Auth0 environment variables are missing or incorrect
+
+**Solution**:
+- Verify `.env` file has correct Auth0 credentials
+- Check `PUBLIC_AUTH0_DOMAIN` and `PUBLIC_AUTH0_CLIENT_ID`
+- In production, verify Netlify environment variables are set
+- See [Auth0 Setup Guide](../README.md#auth0-setup)
+
+#### "Network error during authentication"
+
+**Meaning**: Cannot connect to Auth0 servers
+
+**Solution**:
+- Check internet connection
+- Verify Auth0 domain is accessible
+- Try again in a few moments
+- Check if firewall is blocking Auth0
+
+#### "Token validation failed"
+
+**Meaning**: Auth0 token is invalid or expired
+
+**Solution**:
+- Log out and log back in
+- Clear browser storage
+- If persists, contact support
+
 ### "Validation Error"
 
 **Meaning**: Form data doesn't meet requirements
@@ -565,6 +652,254 @@
 - Close other apps
 - Clear browser cache
 - Use WiFi instead of cellular
+
+## Auth0 Troubleshooting
+
+### Development Mode Issues
+
+#### Mock Authentication Warning
+
+**Symptoms**: Console shows "Using mock authentication" warning
+
+**Meaning**: Auth0 is not configured, using mock authentication for development
+
+**Solution**:
+- This is expected if you haven't set up Auth0 yet
+- To use real Auth0, follow the [Auth0 Setup Guide](../README.md#auth0-setup)
+- Mock authentication allows UI development without Auth0
+
+#### Auth0 Not Loading in Development
+
+**Symptoms**: Login button doesn't work in local development
+
+**Possible Causes**:
+- Environment variables not loaded
+- Callback URL not configured for localhost
+- Auth0 SDK not loading
+
+**Solutions**:
+
+1. **Check environment variables**
+   ```bash
+   # Verify .env file exists and has correct values
+   cat .env
+   ```
+
+2. **Verify callback URL in Auth0**
+   - Go to Auth0 Dashboard → Applications → Settings
+   - Ensure `http://localhost:4321` is in Allowed Callback URLs
+
+3. **Restart development server**
+   ```bash
+   npm run dev
+   ```
+
+4. **Check browser console**
+   - Look for Auth0 SDK loading errors
+   - Verify no CORS errors
+
+### Production Deployment Issues
+
+#### Auth0 Works Locally But Not in Production
+
+**Symptoms**: Authentication works in development but fails in production
+
+**Possible Causes**:
+- Environment variables not set in Netlify
+- Callback URLs not configured for production domain
+- CORS settings incorrect
+
+**Solutions**:
+
+1. **Verify Netlify environment variables**
+   - Go to Netlify Dashboard → Site Settings → Environment Variables
+   - Ensure all Auth0 variables are set:
+     - `PUBLIC_AUTH0_DOMAIN`
+     - `PUBLIC_AUTH0_CLIENT_ID`
+     - `PUBLIC_AUTH0_CALLBACK_URL` (should be production URL)
+
+2. **Update Auth0 callback URLs**
+   - Go to Auth0 Dashboard → Applications → Settings
+   - Add production URL to:
+     - Allowed Callback URLs: `https://your-domain.netlify.app`
+     - Allowed Logout URLs: `https://your-domain.netlify.app`
+     - Allowed Web Origins: `https://your-domain.netlify.app`
+
+3. **Redeploy the site**
+   ```bash
+   netlify deploy --prod
+   ```
+
+4. **Check Netlify deploy logs**
+   - Look for build errors
+   - Verify environment variables are loaded
+
+#### Infinite Redirect Loop
+
+**Symptoms**: Page keeps redirecting between app and Auth0
+
+**Possible Causes**:
+- Callback URL mismatch
+- Session storage issue
+- Middleware configuration error
+
+**Solutions**:
+
+1. **Verify callback URL matches exactly**
+   - Check Auth0 settings
+   - Ensure no trailing slashes
+   - Verify protocol (http vs https)
+
+2. **Clear browser storage**
+   ```javascript
+   // In browser console
+   localStorage.clear();
+   sessionStorage.clear();
+   ```
+
+3. **Check middleware configuration**
+   - Verify protected routes are configured correctly
+   - Ensure middleware isn't blocking callback URL
+
+4. **Disable browser extensions**
+   - Try in incognito mode
+   - Disable ad blockers and privacy extensions
+
+### Token and Session Issues
+
+#### Session Expires Too Quickly
+
+**Symptoms**: Logged out after short period of time
+
+**Possible Causes**:
+- Auth0 session timeout too short
+- Token expiration settings
+- Browser not storing session
+
+**Solutions**:
+
+1. **Check Auth0 session settings**
+   - Go to Auth0 Dashboard → Applications → Settings → Advanced Settings
+   - Review session timeout settings
+
+2. **Enable "Remember Me"**
+   - Use persistent login option if available
+
+3. **Check browser cookie settings**
+   - Ensure cookies are enabled
+   - Allow cookies for Auth0 domain
+
+#### "Token expired" Error
+
+**Symptoms**: Error message about expired token
+
+**Solution**:
+- Log out and log back in
+- This is expected behavior after long inactivity
+- Session will be refreshed on login
+
+### Role and Permission Issues
+
+#### Default Role Always Assigned
+
+**Symptoms**: Always get "PAM" role regardless of Auth0 settings
+
+**Possible Causes**:
+- Role not set in Auth0 `app_metadata`
+- Metadata not being sent in token
+- Role extraction logic error
+
+**Solutions**:
+
+1. **Verify role in Auth0 metadata**
+   - Go to Auth0 Dashboard → Users → Select User
+   - Check `app_metadata` has `role` field
+   - Should be in `app_metadata`, not `user_metadata`
+
+2. **Check token includes metadata**
+   - In browser console after login:
+   ```javascript
+   // Check stored user data
+   console.log(localStorage.getItem('kuiper_user'));
+   ```
+
+3. **Contact admin**
+   - Provide your email
+   - Request role assignment in Auth0
+
+#### Cannot Access Features for My Role
+
+**Symptoms**: Features are hidden or inaccessible
+
+**Possible Causes**:
+- Role-based access control blocking access
+- Role not recognized
+- Feature not available for role
+
+**Solutions**:
+
+1. **Verify your role**
+   - Check header shows correct role
+   - Log out and log back in
+
+2. **Review role permissions**
+   - PAM: All partners they own, all gates
+   - PDM: Pre-Contract through Gate 1
+   - TPM: Gate 2
+   - PSM/TAM: Gate 3 and Post-Launch
+
+3. **Contact admin**
+   - Verify you should have access
+   - Request role change if needed
+
+### CORS and Network Issues
+
+#### CORS Error in Browser Console
+
+**Symptoms**: Console shows "CORS policy" error
+
+**Possible Causes**:
+- Auth0 allowed origins not configured
+- Browser blocking cross-origin requests
+
+**Solutions**:
+
+1. **Update Auth0 CORS settings**
+   - Go to Auth0 Dashboard → Applications → Settings
+   - Add your domain to Allowed Origins (CORS)
+   - Include both localhost and production URLs
+
+2. **Verify domain matches exactly**
+   - No trailing slashes
+   - Correct protocol (http/https)
+   - Correct port for localhost
+
+#### Network Request Failed
+
+**Symptoms**: Authentication fails with network error
+
+**Possible Causes**:
+- Internet connectivity issue
+- Auth0 service outage
+- Firewall blocking Auth0
+
+**Solutions**:
+
+1. **Check internet connection**
+   - Verify other websites load
+   - Try different network
+
+2. **Check Auth0 status**
+   - Visit [Auth0 Status Page](https://status.auth0.com)
+   - Check for service disruptions
+
+3. **Check firewall settings**
+   - Ensure Auth0 domain is not blocked
+   - Try from different network
+
+4. **Contact IT support**
+   - Request Auth0 domain be whitelisted
+   - Provide Auth0 domain: `*.auth0.com`
 
 ## Getting Help
 

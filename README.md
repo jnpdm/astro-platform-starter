@@ -30,7 +30,7 @@ Built with Astro.js, React, Tailwind CSS, and Netlify Blobs for data persistence
 - **Frontend**: Astro 5.x with SSR, React 19.x for interactive components
 - **Styling**: Tailwind CSS 4.x
 - **Data Storage**: Netlify Blobs for questionnaire submissions and partner progress
-- **Authentication**: Netlify Identity for internal team access
+- **Authentication**: Auth0 for secure authentication and authorization
 - **Deployment**: Netlify platform
 
 ## Getting Started
@@ -67,15 +67,26 @@ This ensures you're using the same runtime version for both local development an
 
 4. **Set up environment variables**
 
-Create a `.env` file in the root directory (if not already present):
+Create a `.env` file in the root directory (copy from `.env.example`):
+
+```bash
+cp .env.example .env
+```
+
+Then update the `.env` file with your Auth0 credentials:
 
 ```env
-# Netlify Blobs (automatically configured when using netlify dev)
-NETLIFY_BLOBS_CONTEXT=production
+# Auth0 Configuration
+PUBLIC_AUTH0_DOMAIN=your-tenant.us.auth0.com
+PUBLIC_AUTH0_CLIENT_ID=your-client-id-here
+PUBLIC_AUTH0_CALLBACK_URL=http://localhost:4321
+PUBLIC_AUTH0_AUDIENCE=
 
-# Authentication (optional for local development)
-AUTH_ENABLED=false
+# Authentication
+AUTH_ENABLED=true
 ```
+
+See the [Auth0 Setup Guide](#auth0-setup) below for detailed instructions on obtaining these credentials.
 
 5. **Start the development server**
 
@@ -210,15 +221,115 @@ The project includes a `netlify.toml` configuration file with:
 Required environment variables (set in Netlify Dashboard):
 
 ```
+# Auth0 Configuration
+PUBLIC_AUTH0_DOMAIN=your-tenant.us.auth0.com
+PUBLIC_AUTH0_CLIENT_ID=your-client-id-here
+PUBLIC_AUTH0_CALLBACK_URL=https://your-domain.netlify.app
+PUBLIC_AUTH0_AUDIENCE=
+
+# Application Configuration
 NETLIFY_BLOBS_CONTEXT=production
 AUTH_ENABLED=true
 ```
+
+See the [Auth0 Setup Guide](#auth0-setup) for detailed instructions.
 
 ### Automated Deployment
 
 - **Main branch** → Production deployment
 - **Pull requests** → Deploy preview
 - **Other branches** → Branch deploys (optional)
+
+## Auth0 Setup
+
+The Partner Onboarding Hub uses Auth0 for authentication and authorization. Follow these steps to set up Auth0:
+
+### 1. Create an Auth0 Account
+
+1. Go to [auth0.com](https://auth0.com) and sign up for a free account
+2. Create a new tenant (e.g., `kuiper-partner-hub`)
+
+### 2. Create an Auth0 Application
+
+1. In the Auth0 Dashboard, navigate to **Applications** → **Applications**
+2. Click **Create Application**
+3. Name it "Partner Onboarding Hub"
+4. Select **Single Page Web Applications**
+5. Click **Create**
+
+### 3. Configure Application Settings
+
+In your application settings, configure the following:
+
+**Allowed Callback URLs:**
+```
+http://localhost:4321, https://your-production-domain.netlify.app
+```
+
+**Allowed Logout URLs:**
+```
+http://localhost:4321, https://your-production-domain.netlify.app
+```
+
+**Allowed Web Origins:**
+```
+http://localhost:4321, https://your-production-domain.netlify.app
+```
+
+**Allowed Origins (CORS):**
+```
+http://localhost:4321, https://your-production-domain.netlify.app
+```
+
+Click **Save Changes**.
+
+### 4. Configure User Roles
+
+Auth0 stores user roles in the `app_metadata` field:
+
+1. Navigate to **User Management** → **Users**
+2. Select a user
+3. Scroll to **Metadata** section
+4. Add to `app_metadata`:
+
+```json
+{
+  "role": "PAM"
+}
+```
+
+Valid roles: `Admin`, `PAM`, `PDM`, `TPM`, `PSM`, `TAM`
+
+### 5. Set Environment Variables
+
+Copy your Auth0 credentials to your `.env` file:
+
+- **Domain**: Found in Application Settings (e.g., `your-tenant.us.auth0.com`)
+- **Client ID**: Found in Application Settings
+
+```env
+PUBLIC_AUTH0_DOMAIN=your-tenant.us.auth0.com
+PUBLIC_AUTH0_CLIENT_ID=your-client-id-here
+PUBLIC_AUTH0_CALLBACK_URL=http://localhost:4321
+```
+
+### 6. Configure Netlify Environment Variables
+
+For production deployment, add these environment variables in the Netlify Dashboard:
+
+1. Go to **Site Settings** → **Environment Variables**
+2. Add the following variables:
+
+```
+PUBLIC_AUTH0_DOMAIN=your-tenant.us.auth0.com
+PUBLIC_AUTH0_CLIENT_ID=your-client-id-here
+PUBLIC_AUTH0_CALLBACK_URL=https://your-domain.netlify.app
+AUTH_ENABLED=true
+```
+
+### Development Mode
+
+If Auth0 is not configured, the application will use mock authentication in development mode with console warnings. This allows UI development without requiring Auth0 setup.
 
 ## Configuration
 

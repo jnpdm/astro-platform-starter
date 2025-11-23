@@ -12,7 +12,7 @@ test.describe('Role-Based Access Control', () => {
 
         // Check if redirected to login or if auth widget is present
         const url = page.url();
-        const loginIndicator = page.locator('text=/login/i, text=/sign in/i, [data-netlify-identity]');
+        const loginIndicator = page.locator('text=/login/i, text=/sign in/i');
 
         const hasAuth = url.includes('login') ||
             await loginIndicator.isVisible({ timeout: 5000 }).catch(() => false);
@@ -132,8 +132,8 @@ test.describe('Authentication Flow', () => {
     test('should display login interface', async ({ page }) => {
         await page.goto('/');
 
-        // Look for Netlify Identity widget or login button
-        const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In"), [data-netlify-identity-button]');
+        // Look for login button
+        const loginButton = page.locator('button:has-text("Login"), button:has-text("Sign In")');
 
         // May or may not be visible depending on auth state
         const count = await loginButton.count();

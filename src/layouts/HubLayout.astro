@@ -26,8 +26,8 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin />
 
-        <!-- Netlify Identity Widget -->
-        <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+        <!-- Auth0 SPA SDK -->
+        <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     </head>
     <body class="antialiased text-white bg-kuiper-dark">
         <div class="hub-container">
@@ -46,110 +46,189 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
             </div>
         </div>
 
-        <!-- Netlify Identity initialization and authentication logic -->
+        <!-- Auth0 initialization and authentication logic -->
         <script>
-            import { transformUser, storeUserSession, clearUserSession, isProtectedRoute, getLoginRedirectUrl } from '../middleware/auth';
+            import { storeUserSession, clearUserSession, isProtectedRoute, getLoginRedirectUrl, getUserSession } from '../middleware/auth';
+            import {
+                createAuth0Client,
+                login as auth0Login,
+                logout as auth0Logout,
+                handleCallback as auth0HandleCallback,
+                getUser as auth0GetUser,
+                isAuthenticated as auth0IsAuthenticated
+            } from '../utils/auth0';
 
-            // Wait for Netlify Identity widget to load
-            function initializeNetlifyIdentity() {
-                if (!window.netlifyIdentity) {
-                    console.warn('Netlify Identity widget not loaded yet, retrying...');
-                    setTimeout(initializeNetlifyIdentity, 100);
-                    return;
-                }
-
-                console.log('Netlify Identity widget loaded successfully');
-
-                // Initialize Netlify Identity event listeners
-                window.netlifyIdentity.on('init', (user) => {
-                    console.log('Netlify Identity initialized', user ? 'with user' : 'without user');
-                    if (user) {
-                        const authUser = transformUser(user);
-                        if (authUser) {
-                            storeUserSession(authUser);
-                        }
-                    }
-                });
-
-                window.netlifyIdentity.on('login', (user) => {
-                    console.log('User logged in:', user?.email);
-                    const authUser = transformUser(user);
-                    if (authUser) {
-                        storeUserSession(authUser);
-
-                        // Check for redirect parameter
-                        const urlParams = new URLSearchParams(window.location.search);
-                        const redirect = urlParams.get('redirect');
-
-                        if (redirect) {
-                            window.location.href = redirect;
-                        } else {
-                            window.location.reload();
-                        }
-                    }
-                });
-
-                window.netlifyIdentity.on('logout', () => {
-                    console.log('User logged out');
-                    clearUserSession();
-                    window.location.href = '/';
-                });
-
-                window.netlifyIdentity.on('error', (err) => {
-                    console.error('Netlify Identity error:', err);
-                });
-
-                // Check if user needs to be redirected to login
-                const currentPath = window.location.pathname;
-                const currentUser = window.netlifyIdentity.currentUser();
-
-                if (isProtectedRoute(currentPath) && !currentUser) {
-                    window.location.href = getLoginRedirectUrl(currentPath);
-                }
-
-                // Initialize the widget
-                window.netlifyIdentity.init();
+            // Check if Auth0 is configured
+            function isAuth0Configured(): boolean {
+                return !!(import.meta.env.PUBLIC_AUTH0_DOMAIN && import.meta.env.PUBLIC_AUTH0_CLIENT_ID && import.meta.env.PUBLIC_AUTH0_CALLBACK_URL);
             }
 
-            // Global login/logout functions (available immediately)
+            // Mock authentication for development when Auth0 is not configured
+            function createMockAuth() {
+                console.warn('⚠️  Auth0 not configured - using mock authentication for development');
+                console.warn('⚠️  Set PUBLIC_AUTH0_DOMAIN, PUBLIC_AUTH0_CLIENT_ID, and PUBLIC_AUTH0_CALLBACK_URL to use real Auth0');
+
+                const mockUser = {
+                    id: 'mock-user-123',
+                    email: 'dev@example.com',
+                    name: 'Development User',
+                    role: 'Admin' as const
+                };
+
+                // Store mock user session
+                storeUserSession(mockUser);
+
+                return {
+                    login: () => {
+                        console.log('Mock login - reloading page');
+                        storeUserSession(mockUser);
+                        window.location.reload();
+                    },
+                    logout: () => {
+                        console.log('Mock logout');
+                        clearUserSession();
+                        window.location.href = '/';
+                    },
+                    getCurrentUser: () => mockUser,
+                    isAuthenticated: () => true
+                };
+            }
+
+            // Initialize Auth0 authentication
+            async function initializeAuth0() {
+                try {
+                    // Check if Auth0 SDK is loaded
+                    if (!window.createAuth0Client) {
+                        console.error('Auth0 SDK not loaded. Please check your internet connection.');
+                        return;
+                    }
+
+                    // Check if Auth0 is configured
+                    if (!isAuth0Configured()) {
+                        // Use mock authentication in development
+                        if (import.meta.env.DEV) {
+                            const mockAuth = createMockAuth();
+                            window.kuiperAuth = mockAuth;
+                            return;
+                        } else {
+                            console.error('Auth0 configuration missing. Please set environment variables.');
+                            return;
+                        }
+                    }
+
+                    console.log('Initializing Auth0...');
+
+                    // Create Auth0 client
+                    await createAuth0Client();
+
+                    // Check if we're handling a callback
+                    const query = window.location.search;
+                    if (query.includes('code=') && query.includes('state=')) {
+                        console.log('Handling Auth0 callback...');
+
+                        try {
+                            const result = await auth0HandleCallback();
+
+                            // Get the authenticated user
+                            const user = await auth0GetUser();
+
+                            if (user) {
+                                console.log('User authenticated:', user.email);
+                                storeUserSession(user);
+
+                                // Dispatch auth state change event
+                                window.dispatchEvent(new CustomEvent('auth-state-changed'));
+
+                                // Redirect to return URL or home
+                                const returnTo = result.returnTo || '/';
+                                window.location.href = returnTo;
+                            } else {
+                                console.error('No user returned after callback');
+                                window.location.href = '/';
+                            }
+
+                            return; // Exit early, we're redirecting
+                        } catch (callbackError) {
+                            console.error('Callback handling failed:', callbackError);
+                            // Clear any partial session data
+                            clearUserSession();
+                            // Redirect to home with error
+                            window.location.href = '/?error=auth_callback_failed';
+                            return;
+                        }
+                    }
+
+                    // Check if user is already authenticated
+                    const authenticated = await auth0IsAuthenticated();
+
+                    if (authenticated) {
+                        const user = await auth0GetUser();
+                        if (user) {
+                            console.log('User session restored:', user.email);
+                            storeUserSession(user);
+
+                            // Dispatch auth state change event
+                            window.dispatchEvent(new CustomEvent('auth-state-changed'));
+                        }
+                    }
+                    // Note: Route protection is now handled by server-side middleware
+                    // The middleware will redirect to login before the page renders
+
+                    console.log('Auth0 initialization complete');
+                } catch (error) {
+                    console.error('Auth0 initialization failed:', error);
+
+                    // If we're on a protected route and auth failed, redirect to home
+                    const currentPath = window.location.pathname;
+                    if (isProtectedRoute(currentPath)) {
+                        console.log('Authentication required but failed, redirecting to home...');
+                        window.location.href = '/?error=auth_failed';
+                    }
+                }
+            }
+
+            // Global authentication functions (available immediately)
             window.kuiperAuth = {
-                login: () => {
-                    if (window.netlifyIdentity) {
-                        console.log('Opening login dialog');
-                        window.netlifyIdentity.open('login');
-                    } else {
-                        console.error('Netlify Identity widget not loaded');
+                login: async () => {
+                    try {
+                        console.log('Initiating login...');
+                        // Check if there's a redirect parameter in the URL
+                        const urlParams = new URLSearchParams(window.location.search);
+                        const redirectPath = urlParams.get('redirect');
+                        const returnTo = redirectPath || window.location.pathname;
+                        await auth0Login(returnTo);
+                    } catch (error) {
+                        console.error('Login failed:', error);
+                        alert('Login failed. Please try again.');
                     }
                 },
-                logout: () => {
-                    if (window.netlifyIdentity) {
-                        console.log('Logging out');
-                        window.netlifyIdentity.logout();
-                    } else {
-                        console.error('Netlify Identity widget not loaded');
-                    }
-                },
-                signup: () => {
-                    if (window.netlifyIdentity) {
-                        console.log('Opening signup dialog');
-                        window.netlifyIdentity.open('signup');
-                    } else {
-                        console.error('Netlify Identity widget not loaded');
+                logout: async () => {
+                    try {
+                        console.log('Logging out...');
+                        await auth0Logout();
+                    } catch (error) {
+                        console.error('Logout failed:', error);
+                        // Even if Auth0 logout fails, clear local session and redirect
+                        clearUserSession();
+                        window.location.href = '/';
                     }
                 },
                 getCurrentUser: () => {
-                    if (window.netlifyIdentity) {
-                        return transformUser(window.netlifyIdentity.currentUser());
-                    }
-                    return null;
+                    // Return user from session storage (synchronous)
+                    return getUserSession();
+                },
+                isAuthenticated: () => {
+                    // Check if user exists in session storage (synchronous)
+                    const user = getUserSession();
+                    return user !== null;
                 }
             };
 
             // Start initialization when DOM is ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeNetlifyIdentity);
+                document.addEventListener('DOMContentLoaded', initializeAuth0);
             } else {
-                initializeNetlifyIdentity();
+                initializeAuth0();
             }
         </script>
     </body>

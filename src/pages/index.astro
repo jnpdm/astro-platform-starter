@@ -10,12 +10,55 @@ const currentUser = getUserSession();
 
 // Get role-specific dashboard message
 const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.role) : '';
+
+// Check for redirect parameter (user was redirected from protected route)
+const redirectParam = Astro.url.searchParams.get('redirect');
+const errorParam = Astro.url.searchParams.get('error');
 ---
 
 <Layout title="Dashboard - Kuiper Partner Onboarding Hub">
     <div class="py-8">
         <h1 class="text-4xl font-bold mb-2">Partner Onboarding Dashboard</h1>
         <p class="text-gray-300 mb-4">Track partner progress through the gated onboarding journey</p>
+
+        {
+            redirectParam && !currentUser && (
+                <div class="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded mb-6">
+                    <p class="font-semibold mb-2">Authentication Required</p>
+                    <p class="text-sm mb-3">You need to sign in to access that page.</p>
+                    <button id="login-button" class="bg-yellow-700 hover:bg-yellow-600 px-4 py-2 rounded text-sm font-medium">
+                        Sign In
+                    </button>
+                </div>
+            )
+        }
+
+        {
+            errorParam === 'access_denied' && (
+                <div class="bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+                    <p class="font-semibold mb-1">Access Denied</p>
+                    <p class="text-sm">You don't have permission to access that page.</p>
+                </div>
+            )
+        }
+
+        {
+            errorParam === 'auth_failed' && (
+                <div class="bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+                    <p class="font-semibold mb-1">Authentication Failed</p>
+                    <p class="text-sm">There was a problem with authentication. Please try again.</p>
+                </div>
+            )
+        }
+
+        {
+            errorParam === 'auth_callback_failed' && (
+                <div class="bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+                    <p class="font-semibold mb-1">Login Failed</p>
+                    <p class="text-sm">The login process was interrupted. Please try again.</p>
+                </div>
+            )
+        }
 
         {
             currentUser && (
@@ -93,6 +136,16 @@ const roleDashboardMessage = currentUser ? getRoleDashboardMessage(currentUser.r
     </div>
 
     <script>
+        // Handle login button click
+        const loginButton = document.getElementById('login-button');
+        if (loginButton) {
+            loginButton.addEventListener('click', () => {
+                if (window.kuiperAuth) {
+                    window.kuiperAuth.login();
+                }
+            });
+        }
+
         // Gate configuration
         const gateOrder = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
         const gateNames = {

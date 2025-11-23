@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import documentationConfig from '../config/documentation.json';
-import gatesConfig from '../config/gates.json';
+import documentationConfig from '../../config/documentation.json';
+import gatesConfig from '../../config/gates.json';
 
 describe('Documentation Page Configuration', () => {
     it('should have documentation sections defined', () => {
