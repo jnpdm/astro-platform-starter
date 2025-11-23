@@ -11,7 +11,9 @@ This guide provides detailed instructions for setting up Auth0 authentication fo
 - [Step 3: Configure Application Settings](#step-3-configure-application-settings)
 - [Step 4: Configure User Roles](#step-4-configure-user-roles)
 - [Step 5: Set Up Environment Variables](#step-5-set-up-environment-variables)
-- [Step 6: Test Authentication](#step-6-test-authentication)
+- [Step 6: Deploy to Netlify](#step-6-deploy-to-netlify)
+- [Step 7: Test Authentication](#step-7-test-authentication)
+- [Security Considerations](#security-considerations)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
@@ -184,7 +186,50 @@ AUTH_ENABLED=true
 5. Click **Save**
 6. Redeploy your site for changes to take effect
 
-## Step 6: Test Authentication
+## Step 6: Deploy to Netlify
+
+### Configure Netlify Environment Variables
+
+**CRITICAL**: You must configure Auth0 environment variables in Netlify before authentication will work in production.
+
+1. Go to your Netlify site dashboard
+2. Navigate to **Site Settings** → **Environment Variables**
+3. Click **Add a variable**
+4. Add the following variables:
+
+| Key | Value | Example | Required |
+|-----|-------|---------|----------|
+| `PUBLIC_AUTH0_DOMAIN` | Your Auth0 domain | `kuiper-partner-hub.us.auth0.com` | ✅ Yes |
+| `PUBLIC_AUTH0_CLIENT_ID` | Your Auth0 client ID | `abc123xyz456...` | ✅ Yes |
+| `PUBLIC_AUTH0_CALLBACK_URL` | Your production URL | `https://partner-hub.netlify.app` | ✅ Yes |
+| `PUBLIC_AUTH0_AUDIENCE` | API audience (optional) | Leave empty if not using | ❌ No |
+| `AUTH_ENABLED` | Enable authentication | `true` | ✅ Yes |
+
+5. Click **Save**
+6. **Important**: Trigger a new deployment for the environment variables to take effect
+
+### Verify Configuration
+
+After setting environment variables:
+
+1. Go to **Deploys** tab in Netlify
+2. Click **Trigger deploy** → **Deploy site**
+3. Wait for deployment to complete
+4. Check the deploy log to ensure no Auth0-related errors
+
+### Update Auth0 Callback URLs
+
+Make sure your production URL is added to Auth0:
+
+1. Go to Auth0 Dashboard → Applications → Your Application
+2. Add your Netlify production URL to:
+   - Allowed Callback URLs: `https://your-site.netlify.app`
+   - Allowed Logout URLs: `https://your-site.netlify.app`
+   - Allowed Web Origins: `https://your-site.netlify.app`
+   - Allowed Origins (CORS): `https://your-site.netlify.app`
+3. Click **Save Changes**
+
+## Step 7: Test Authentication
 
 ### Local Testing
 
@@ -203,16 +248,62 @@ npm run dev
 
 ### Production Testing
 
-1. Deploy to Netlify:
+1. Visit your production URL (e.g., `https://your-site.netlify.app`)
+2. Click the **Sign In** button
+3. Test the complete login flow
+4. Verify your name and role appear in the header
+5. Test accessing protected routes (e.g., `/partner/new`)
+6. Test logout functionality
+7. Verify role-based access control works
+
+### Verification Checklist
+
+- [ ] Environment variables are set in Netlify
+- [ ] Production URL is added to Auth0 callback URLs
+- [ ] Login redirects to Auth0 correctly
+- [ ] After login, user is redirected back to the application
+- [ ] User name and role display in header
+- [ ] Protected routes require authentication
+- [ ] Logout clears session and redirects properly
+- [ ] API endpoints return JSON (not HTML) for unauthenticated requests
+
+## Security Considerations
+
+### Session Management
+
+The current implementation uses client-side session storage (localStorage) with Auth0 token validation. While Auth0 SDK validates tokens, be aware:
+
+- **Session data is cached in localStorage**: This improves performance but means expired sessions may not be immediately detected
+- **Token validation**: Auth0 SDK validates tokens on each request, providing security
+- **Session expiration**: Sessions expire after 24 hours and require re-authentication
+
+### Recommendations for Production
+
+1. **Monitor Authentication Errors**: Set up logging and monitoring for authentication failures
+2. **Regular Security Audits**: Review Auth0 logs regularly for suspicious activity
+3. **Token Refresh**: Consider implementing token refresh for long-running sessions
+4. **Server-Side Validation**: For highly sensitive operations, consider adding server-side token validation via Netlify Functions
+
+### CDN Dependency
+
+The Auth0 SDK is currently loaded from CDN (`https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js`). This:
+
+- ✅ Reduces bundle size
+- ✅ Leverages browser caching
+- ❌ Creates external dependency
+- ❌ Requires CDN availability
+
+**Alternative**: Install as npm dependency for better reliability:
 
 ```bash
-npm run build
-netlify deploy --prod
+npm install @auth0/auth0-spa-js
 ```
 
-2. Visit your production URL
-3. Test the login flow
-4. Verify role-based access control works
+Then import in your code instead of using CDN script tag. This provides:
+- Better version control
+- Offline development capability
+- No external CDN dependency
+- Bundled with your application
 
 ## Troubleshooting
 
@@ -225,14 +316,16 @@ netlify deploy --prod
 - Check for trailing slashes (they matter!)
 - Ensure both HTTP and HTTPS are configured if needed
 
-### "window.netlifyIdentity is undefined"
+### "Authentication not working in production"
 
-**Problem**: Old Netlify Identity code is still present.
+**Problem**: Authentication works locally but not in production.
 
-**Solution**: 
-- This is expected during migration
-- The Auth0 migration will replace Netlify Identity
-- Ignore this error for now
+**Solution**:
+- Verify environment variables are set in Netlify Dashboard
+- Check that `PUBLIC_AUTH0_CALLBACK_URL` matches your production URL exactly
+- Ensure production URL is added to Auth0 Allowed Callback URLs
+- Trigger a new deployment after setting environment variables
+- Check Netlify deploy logs for Auth0-related errors
 
 ### User Has No Role
 
@@ -269,16 +362,93 @@ netlify deploy --prod
 - Ensure the domain matches exactly (including protocol)
 - Save changes and wait a few minutes for propagation
 
+### JSON Parsing Error on Index Page
+
+**Problem**: Error "Unexpected token '<', "<!DOCTYPE "... is not valid JSON"
+
+**Solution**:
+- This was fixed in commit 8777216 (JSON / Middleware fix)
+- The middleware now returns proper JSON responses for API routes
+- If you still see this error:
+  - Clear browser cache and localStorage
+  - Verify you're on the latest deployment
+  - Check that middleware is properly configured
+
+### Mock Authentication in Production
+
+**Problem**: Production is using mock authentication instead of Auth0.
+
+**Solution**:
+- This happens when Auth0 environment variables are not set
+- Go to Netlify Dashboard → Site Settings → Environment Variables
+- Verify all required variables are present (see Step 6)
+- Trigger a new deployment
+- Check browser console for Auth0 initialization messages
+
+## Migration Notes
+
+### Recent Changes
+
+The Auth0 migration was completed recently (commit 8777216). Key changes:
+
+1. **Removed Netlify Identity**: The old `netlify.toml` Identity configuration has been removed
+2. **Fixed API Middleware**: API routes now return JSON errors instead of HTML redirects
+3. **Added TypeScript Declarations**: Global `window.kuiperAuth` object now has proper types
+4. **Improved Error Handling**: Better error messages for authentication failures
+
+### Known Limitations
+
+1. **Client-Side Session Storage**: Sessions are stored in localStorage, which is client-side only
+2. **CDN Dependency**: Auth0 SDK is loaded from CDN (consider npm package for production)
+3. **No Token Refresh**: Long-running sessions require re-authentication after 24 hours
+4. **Manual Role Assignment**: User roles must be manually assigned in Auth0 Dashboard
+
+### Future Improvements
+
+Consider implementing:
+- Server-side token validation for sensitive operations
+- Automatic token refresh for better UX
+- Auth0 Rules or Actions for automatic role assignment
+- Installing Auth0 SDK as npm dependency instead of CDN
+
 ## Additional Resources
 
 - [Auth0 Documentation](https://auth0.com/docs)
 - [Auth0 SPA SDK Documentation](https://auth0.com/docs/libraries/auth0-spa-js)
 - [Auth0 Management API](https://auth0.com/docs/api/management/v2)
+- [Netlify Environment Variables](https://docs.netlify.com/environment-variables/overview/)
 
 ## Support
 
 For issues with Auth0 setup:
-1. Check the [Auth0 Community](https://community.auth0.com/)
-2. Review Auth0 logs in the dashboard
-3. Contact the development team
+1. Check the [Troubleshooting](#troubleshooting) section above
+2. Review the [Auth0 Community](https://community.auth0.com/)
+3. Check Auth0 logs in the dashboard (Monitoring → Logs)
+4. Review Netlify deploy logs for errors
+5. Contact the development team
+
+## Monitoring and Maintenance
+
+### Auth0 Dashboard Monitoring
+
+Regularly check:
+- **Logs**: Monitor authentication attempts and failures
+- **Users**: Review user activity and role assignments
+- **Applications**: Verify configuration remains correct
+- **Anomaly Detection**: Enable and monitor for suspicious activity
+
+### Netlify Monitoring
+
+Monitor:
+- **Deploy logs**: Check for Auth0-related errors during deployment
+- **Function logs**: Review serverless function execution for auth issues
+- **Analytics**: Track authentication success/failure rates
+
+### Recommended Alerts
+
+Set up alerts for:
+- High authentication failure rates
+- Unusual login patterns
+- Token validation errors
+- API authentication errors (401/403 responses)
 

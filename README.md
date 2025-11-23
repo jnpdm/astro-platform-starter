@@ -242,7 +242,13 @@ See the [Auth0 Setup Guide](#auth0-setup) for detailed instructions.
 
 ## Auth0 Setup
 
-The Partner Onboarding Hub uses Auth0 for authentication and authorization. Follow these steps to set up Auth0:
+The Partner Onboarding Hub uses Auth0 for authentication and authorization.
+
+**📋 Quick Start:** See the [Auth0 Setup Guide](./docs/AUTH0-SETUP.md) for complete instructions.
+
+**✅ Deployment:** Use the [Auth0 Deployment Checklist](./docs/AUTH0-DEPLOYMENT-CHECKLIST.md) before deploying to production.
+
+### Quick Setup Steps
 
 ### 1. Create an Auth0 Account
 
@@ -315,21 +321,34 @@ PUBLIC_AUTH0_CALLBACK_URL=http://localhost:4321
 
 ### 6. Configure Netlify Environment Variables
 
+**⚠️ CRITICAL:** Auth0 will not work in production until environment variables are configured in Netlify.
+
 For production deployment, add these environment variables in the Netlify Dashboard:
 
 1. Go to **Site Settings** → **Environment Variables**
 2. Add the following variables:
 
-```
-PUBLIC_AUTH0_DOMAIN=your-tenant.us.auth0.com
-PUBLIC_AUTH0_CLIENT_ID=your-client-id-here
-PUBLIC_AUTH0_CALLBACK_URL=https://your-domain.netlify.app
-AUTH_ENABLED=true
-```
+| Variable | Required | Example |
+|----------|----------|---------|
+| `PUBLIC_AUTH0_DOMAIN` | ✅ Yes | `your-tenant.us.auth0.com` |
+| `PUBLIC_AUTH0_CLIENT_ID` | ✅ Yes | `abc123xyz...` |
+| `PUBLIC_AUTH0_CALLBACK_URL` | ✅ Yes | `https://your-domain.netlify.app` |
+| `AUTH_ENABLED` | ✅ Yes | `true` |
+
+3. **Trigger a new deployment** after setting variables for changes to take effect
+
+See the [Auth0 Deployment Checklist](./docs/AUTH0-DEPLOYMENT-CHECKLIST.md) for a complete pre-deployment checklist.
 
 ### Development Mode
 
 If Auth0 is not configured, the application will use mock authentication in development mode with console warnings. This allows UI development without requiring Auth0 setup.
+
+### Security Notes
+
+- **Session Storage:** Sessions are stored client-side in localStorage with Auth0 token validation
+- **CDN Dependency:** Auth0 SDK is loaded from CDN (consider npm package for better reliability)
+- **Token Expiration:** Sessions expire after 24 hours
+- See [Auth0 Setup Guide](./docs/AUTH0-SETUP.md) for detailed security considerations
 
 ## Configuration
 

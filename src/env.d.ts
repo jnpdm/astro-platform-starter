@@ -7,3 +7,13 @@ declare namespace App {
         user?: AuthUser;
     }
 }
+
+// Global window extensions for Auth0
+interface Window {
+    kuiperAuth?: {
+        login: () => Promise<void>;
+        logout: () => Promise<void>;
+        getCurrentUser: () => AuthUser | null;
+        isAuthenticated: () => boolean;
+    };
+}
