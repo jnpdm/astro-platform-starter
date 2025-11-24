@@ -39,8 +39,9 @@ export const GET: APIRoute = async ({ request }) => {
         const page = parseInt(url.searchParams.get('page') || '1', 10);
         const pageSize = parseInt(url.searchParams.get('pageSize') || '20', 10);
 
-        // Get current user
-        const currentUser = getUserSession();
+        // Get current user from cookies (server-side)
+        const cookieHeader = request.headers.get('cookie');
+        const currentUser = getUserSession(cookieHeader || undefined);
         console.log('[API] Current user:', currentUser ? { email: currentUser.email, role: currentUser.role } : 'null');
 
         // Fetch all partners
