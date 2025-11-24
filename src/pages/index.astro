@@ -170,8 +170,10 @@ const errorParam = Astro.url.searchParams.get('error');
                 errorState?.classList.add('hidden');
                 dashboardContent?.classList.add('hidden');
 
-                // Fetch partner data
-                const response = await fetch('/api/partners');
+                // Fetch partner data (include credentials to send cookies)
+                const response = await fetch('/api/partners', {
+                    credentials: 'same-origin'
+                });
 
                 if (!response.ok) {
                     // Handle authentication errors gracefully
