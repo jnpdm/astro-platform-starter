@@ -18,10 +18,11 @@
 export const prerender = false;
 
 import Gate0Questionnaire from '../../components/questionnaires/Gate0Questionnaire';
+import { ToastProvider } from '../../contexts/ToastContext';
 
 // Load the Gate 0 questionnaire config
 import gate0ConfigData from '../../config/questionnaires/gate-0-kickoff.json';
-const gate0Config = gate0ConfigData;
+const gate0Config = gate0ConfigData as any;
 
 // Get partner ID from URL query params (if editing existing submission)
 const url = new URL(Astro.request.url);
@@ -62,6 +63,8 @@ const mode = existingSubmission ? 'view' : 'edit';
         </div>
 
         <!-- Questionnaire Component -->
-        <Gate0Questionnaire client:load config={gate0Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+        <ToastProvider client:only="react">
+            <Gate0Questionnaire client:only="react" config={gate0Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+        </ToastProvider>
     </div>
 </HubLayout>

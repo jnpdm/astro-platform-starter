@@ -17,10 +17,14 @@
 export const prerender = false;
 
 import PreContractQuestionnaire from '../../components/questionnaires/PreContractQuestionnaire';
+import { ToastProvider } from '../../contexts/ToastContext';
 
 // Load the pre-contract PDM questionnaire config
 import preContractConfigData from '../../config/questionnaires/pre-contract-pdm.json';
-const preContractConfig = preContractConfigData;
+const preContractConfig = preContractConfigData as any;
+
+// Debug: Log config to verify it's loaded
+console.log('Pre-contract config loaded:', preContractConfig?.id);
 
 // Get partner ID from URL query params (if editing existing submission)
 const url = new URL(Astro.request.url);
@@ -61,6 +65,8 @@ const mode = existingSubmission ? 'view' : 'edit';
         </div>
 
         <!-- Questionnaire Component -->
-        <PreContractQuestionnaire client:load config={preContractConfig} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+        <ToastProvider client:only="react">
+            <PreContractQuestionnaire client:only="react" config={preContractConfig} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+        </ToastProvider>
     </div>
 </HubLayout>
