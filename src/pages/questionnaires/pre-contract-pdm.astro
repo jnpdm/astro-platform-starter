@@ -17,10 +17,10 @@
 export const prerender = false;
 
 import PreContractQuestionnaire from '../../components/questionnaires/PreContractQuestionnaire';
-import type { QuestionnaireConfig } from '../../types/questionnaire';
 
 // Load the pre-contract PDM questionnaire config
-const preContractConfig: QuestionnaireConfig = await import('../../config/questionnaires/pre-contract-pdm.json').then((m) => m.default);
+import preContractConfigData from '../../config/questionnaires/pre-contract-pdm.json';
+const preContractConfig = preContractConfigData;
 
 // Get partner ID from URL query params (if editing existing submission)
 const url = new URL(Astro.request.url);
@@ -57,48 +57,6 @@ const mode = existingSubmission ? 'view' : 'edit';
                     <p class="text-gray-300">Validate partner readiness before contract execution</p>
                 </div>
                 <a href="/" class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"> ← Back to Dashboard </a>
-            </div>
-        </div>
-        <!-- Page Header -->
-        <div class="mb-8">
-            <h2 class="text-3xl font-bold text-gray-900 mb-2">{pageTitle}</h2>
-            <p class="text-gray-600 mb-4">
-                {preContractConfig.metadata.description}
-            </p>
-
-            <!-- Questionnaire Info -->
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <p class="text-sm font-medium text-blue-900">Estimated Time</p>
-                        <p class="text-lg text-blue-700">{preContractConfig.metadata.estimatedTime} minutes</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-blue-900">Sections</p>
-                        <p class="text-lg text-blue-700">{preContractConfig.sections.length}</p>
-                    </div>
-                    <div>
-                        <p class="text-sm font-medium text-blue-900">Required Roles</p>
-                        <p class="text-lg text-blue-700">{preContractConfig.metadata.requiredRoles.join(', ')}</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Gate Criteria -->
-            <div class="mt-4 bg-white border border-gray-200 rounded-lg p-4">
-                <h3 class="text-sm font-medium text-gray-900 mb-2">Gate Criteria</h3>
-                <ul class="space-y-1">
-                    {
-                        preContractConfig.gateCriteria.map((criterion) => (
-                            <li class="flex items-start text-sm text-gray-700">
-                                <svg class="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                                {criterion}
-                            </li>
-                        ))
-                    }
-                </ul>
             </div>
         </div>
 
