@@ -51,12 +51,28 @@ const mode = existingSubmission ? 'view' : 'edit';
 
 <HubLayout title={pageTitle} description="Gate 0: Onboarding Kickoff Questionnaire">
     <div class="py-8">
+        <!-- Immediate inline script test -->
+        <script is:inline>
+            alert('GATE 0 SCRIPT IS RUNNING!');
+            console.log('=== GATE 0 PAGE LOADED ===');
+            console.log('Document ready state:', document.readyState);
+            console.log('Location:', window.location.href);
+        </script>
+
         <!-- Page Header -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-4xl font-bold mb-2">Gate 0: Onboarding Kickoff</h1>
                     <p class="text-gray-300">Validate readiness for white-glove onboarding support</p>
+                    <!-- Debug info - BUILD VERSION 2024-11-24-v3 -->
+                    <div class="mt-2 p-3 bg-yellow-900 border-2 border-yellow-500 text-yellow-200 text-sm rounded">
+                        <strong>🔍 Debug Info (v3):</strong><br />
+                        Config ID: {gate0Config?.id || 'MISSING'}<br />
+                        Partner ID: {partnerId}<br />
+                        Mode: {mode}<br />
+                        <strong>If you see this yellow box, the page is loading!</strong>
+                    </div>
                 </div>
                 <a href="/" class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"> ← Back to Dashboard </a>
             </div>
