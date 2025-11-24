@@ -20,20 +20,27 @@ export const onRequest = defineMiddleware(async (context, next) => {
     const { url, redirect } = context;
     const pathname = url.pathname;
 
+    console.log('[Middleware] Request to:', pathname);
+
     // Skip middleware for public routes and static assets
     if (
         pathname.startsWith('/_') ||
         pathname.startsWith('/favicon') ||
         pathname.includes('.') && !pathname.endsWith('.html')
     ) {
+        console.log('[Middleware] Skipping middleware for:', pathname);
         return next();
     }
 
     // Check if this is an API route
     const isApiRoute = pathname.startsWith('/api/');
+    console.log('[Middleware] Is API route:', isApiRoute);
 
     // Check if route requires authentication
-    if (isProtectedRoute(pathname)) {
+    const isProtected = isProtectedRoute(pathname);
+    console.log('[Middleware] Is protected route:', isProtected);
+
+    if (isProtected) {
         console.log('[Middleware] Protected route:', pathname);
 
         // Get user session from cookies (server-side)
