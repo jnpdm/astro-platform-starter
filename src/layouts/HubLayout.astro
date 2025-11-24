@@ -25,9 +25,6 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
         {description && <meta name="description" content={description} />}
         <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
         <link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin />
-
-        <!-- Auth0 SPA SDK -->
-        <script src="https://cdn.auth0.com/js/auth0-spa-js/2.0/auth0-spa-js.production.js"></script>
     </head>
     <body class="antialiased text-white bg-kuiper-dark">
         <div class="hub-container">
@@ -97,26 +94,27 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
             // Initialize Auth0 authentication
             async function initializeAuth0() {
                 try {
-                    // Check if Auth0 SDK is loaded
-                    if (!window.createAuth0Client) {
-                        console.error('Auth0 SDK not loaded. Please check your internet connection.');
-                        return;
-                    }
+                    console.log('Starting Auth0 initialization...');
 
                     // Check if Auth0 is configured
                     if (!isAuth0Configured()) {
+                        console.log('Auth0 not configured, checking environment...');
                         // Use mock authentication in development
                         if (import.meta.env.DEV) {
+                            console.log('Development mode: using mock authentication');
                             const mockAuth = createMockAuth();
                             window.kuiperAuth = mockAuth;
+                            isInitialized = true;
                             return;
                         } else {
                             console.error('Auth0 configuration missing. Please set environment variables.');
+                            console.error('Required: PUBLIC_AUTH0_DOMAIN, PUBLIC_AUTH0_CLIENT_ID, PUBLIC_AUTH0_CALLBACK_URL');
+                            isInitialized = true; // Mark as "initialized" even on error
                             return;
                         }
                     }
 
-                    console.log('Initializing Auth0...');
+                    console.log('Auth0 configured, initializing client...');
 
                     // Create Auth0 client
                     await createAuth0Client();
@@ -175,8 +173,10 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                     // The middleware will redirect to login before the page renders
 
                     console.log('Auth0 initialization complete');
+                    isInitialized = true;
                 } catch (error) {
                     console.error('Auth0 initialization failed:', error);
+                    isInitialized = true; // Mark as initialized even on error to prevent hanging
 
                     // If we're on a protected route and auth failed, redirect to home
                     const currentPath = window.location.pathname;
@@ -187,11 +187,30 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                 }
             }
 
+            // Track initialization state
+            let isInitialized = false;
+            let initializationPromise: Promise<void> | null = null;
+
+            // Ensure Auth0 is initialized before performing actions
+            async function ensureInitialized(): Promise<void> {
+                if (isInitialized) return;
+                if (initializationPromise) {
+                    await initializationPromise;
+                    return;
+                }
+                // If not initialized and no promise, wait a bit and check again
+                await new Promise((resolve) => setTimeout(resolve, 100));
+                if (!isInitialized) {
+                    throw new Error('Auth0 initialization is taking longer than expected. Please refresh the page.');
+                }
+            }
+
             // Global authentication functions (available immediately)
             window.kuiperAuth = {
                 login: async () => {
                     try {
                         console.log('Initiating login...');
+                        await ensureInitialized();
                         // Check if there's a redirect parameter in the URL
                         const urlParams = new URLSearchParams(window.location.search);
                         const redirectPath = urlParams.get('redirect');
@@ -199,12 +218,13 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                         await auth0Login(returnTo);
                     } catch (error) {
                         console.error('Login failed:', error);
-                        alert('Login failed. Please try again.');
+                        alert(`Login failed: ${error instanceof Error ? error.message : 'Please try again.'}`);
                     }
                 },
                 logout: async () => {
                     try {
                         console.log('Logging out...');
+                        await ensureInitialized();
                         await auth0Logout();
                     } catch (error) {
                         console.error('Logout failed:', error);
@@ -226,9 +246,11 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
 
             // Start initialization when DOM is ready
             if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', initializeAuth0);
+                document.addEventListener('DOMContentLoaded', () => {
+                    initializationPromise = initializeAuth0();
+                });
             } else {
-                initializeAuth0();
+                initializationPromise = initializeAuth0();
             }
         </script>
     </body>

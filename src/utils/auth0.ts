@@ -3,6 +3,8 @@
  * Provides Auth0 integration for the Partner Onboarding Hub
  */
 
+import { createAuth0Client as createAuth0ClientSDK } from '@auth0/auth0-spa-js';
+import type { Auth0Client as Auth0ClientSDK } from '@auth0/auth0-spa-js';
 import type { AuthUser, UserRole } from '../middleware/auth';
 import {
     handleAuth0Error,
@@ -12,13 +14,6 @@ import {
     handleStorageError,
     retryWithBackoff,
 } from './auth0-errors';
-
-// Auth0 client type (from @auth0/auth0-spa-js)
-declare global {
-    interface Window {
-        createAuth0Client?: (config: Auth0Config) => Promise<Auth0Client>;
-    }
-}
 
 export interface Auth0Config {
     domain: string;
@@ -31,18 +26,12 @@ export interface Auth0Config {
     useRefreshTokens?: boolean;
 }
 
-export interface Auth0Client {
-    loginWithRedirect(options?: { appState?: any }): Promise<void>;
-    handleRedirectCallback(): Promise<{ appState?: any }>;
-    logout(options?: { logoutParams?: { returnTo?: string } }): Promise<void>;
-    isAuthenticated(): Promise<boolean>;
-    getUser(): Promise<Auth0User | undefined>;
-    getTokenSilently(): Promise<string>;
-}
+// Re-export Auth0Client type from SDK
+export type Auth0Client = Auth0ClientSDK;
 
 export interface Auth0User {
-    sub: string;
-    email: string;
+    sub?: string;
+    email?: string;
     name?: string;
     nickname?: string;
     picture?: string;
@@ -113,19 +102,17 @@ export async function createAuth0Client(config?: Auth0Config): Promise<Auth0Clie
     try {
         const clientConfig = config || getAuth0Config();
 
-        // Check if Auth0 SDK is loaded
-        if (typeof window === 'undefined' || !window.createAuth0Client) {
-            const error = new Error(
-                'Auth0 SDK not loaded. Please ensure the Auth0 SPA SDK script is included in your HTML.'
-            );
+        // Check if we're in a browser environment
+        if (typeof window === 'undefined') {
+            const error = new Error('Auth0 client can only be created in browser environment');
             logAuthError(error, {
                 errorType: 'ConfigurationError',
-                errorMessage: 'Auth0 SDK not loaded',
+                errorMessage: 'Not in browser environment',
             });
             throw error;
         }
 
-        const client = await window.createAuth0Client(clientConfig);
+        const client = await createAuth0ClientSDK(clientConfig);
         return client;
     } catch (error) {
         logAuthError(error, {
@@ -362,6 +349,14 @@ export function getUserRole(auth0User: Auth0User): UserRole {
  * Converts Auth0 user object to the application's AuthUser format
  */
 export function transformAuth0User(auth0User: Auth0User): AuthUser {
+    // Validate required fields
+    if (!auth0User.sub) {
+        throw new Error('Auth0 user missing required "sub" field');
+    }
+    if (!auth0User.email) {
+        throw new Error('Auth0 user missing required "email" field');
+    }
+
     const role = getUserRole(auth0User);
 
     return {
