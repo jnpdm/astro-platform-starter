@@ -10,28 +10,19 @@ import type { AuthUser } from '../middleware/auth';
  * Check if a user can access a specific partner
  * 
  * Rules:
- * - Admin can access all partners
+ * - PDM (admin) can access all partners
  * - PAM can access partners they own
- * - PDM can access partners they own or are assigned to
- * - TPM can access partners they own or are assigned to
- * - PSM can access partners they own or are assigned to
- * - TAM can access partners they own or are assigned to
  */
 export function canAccessPartner(user: AuthUser | null, partner: PartnerRecord): boolean {
     if (!user) return false;
 
-    // Admin has full access
-    if (user.role === 'Admin') return true;
+    // PDM has full access (admin role)
+    if (user.role === 'PDM') return true;
 
     const userEmail = user.email.toLowerCase();
 
-    // Check if user is assigned to this partner in any role
-    const isOwner =
-        partner.pamOwner?.toLowerCase() === userEmail ||
-        partner.pdmOwner?.toLowerCase() === userEmail ||
-        partner.tpmOwner?.toLowerCase() === userEmail ||
-        partner.psmOwner?.toLowerCase() === userEmail ||
-        partner.tamOwner?.toLowerCase() === userEmail;
+    // PAM can access partners they own
+    const isOwner = partner.pamOwner?.toLowerCase() === userEmail;
 
     return isOwner;
 }
@@ -40,12 +31,8 @@ export function canAccessPartner(user: AuthUser | null, partner: PartnerRecord):
  * Filter partners based on user role and gate access
  * 
  * Role-based gate visibility:
- * - PAM: All gates (full visibility)
- * - PDM: Pre-Contract through Gate 1 (Ready to Sell)
- * - TPM: Gate 2 (Ready to Order)
- * - PSM: Gate 3 (Ready to Deliver) and Post-Launch
- * - TAM: Gate 3 (Ready to Deliver) and Post-Launch
- * - Admin: All gates (full visibility)
+ * - PDM (admin): All gates (full visibility)
+ * - PAM: All gates for partners they own
  */
 export function filterPartnersByRole(
     partners: PartnerRecord[],
@@ -53,64 +40,22 @@ export function filterPartnersByRole(
 ): PartnerRecord[] {
     if (!user) return [];
 
-    // Admin sees everything
-    if (user.role === 'Admin') {
+    // PDM (admin) sees everything
+    if (user.role === 'PDM') {
         return partners;
     }
 
-    // Filter by ownership first
-    const ownedPartners = partners.filter(partner => canAccessPartner(user, partner));
-
-    // Then filter by gate visibility based on role
-    return ownedPartners.filter(partner => {
-        const currentGate = partner.currentGate;
-
-        switch (user.role) {
-            case 'PAM':
-                // PAM sees all gates
-                return true;
-
-            case 'PDM':
-                // PDM sees Pre-Contract through Gate 1
-                return ['pre-contract', 'gate-0', 'gate-1'].includes(currentGate);
-
-            case 'TPM':
-                // TPM sees Gate 2
-                return currentGate === 'gate-2';
-
-            case 'PSM':
-            case 'TAM':
-                // PSM and TAM see Gate 3 and Post-Launch
-                return ['gate-3', 'post-launch'].includes(currentGate);
-
-            default:
-                return false;
-        }
-    });
+    // PAM sees all gates for partners they own
+    return partners.filter(partner => canAccessPartner(user, partner));
 }
 
 /**
  * Get gates that are relevant for a specific role
+ * Both PAM and PDM can access all gates
  */
 export function getRelevantGatesForRole(role: UserRole): GateId[] {
-    switch (role) {
-        case 'Admin':
-        case 'PAM':
-            return ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
-
-        case 'PDM':
-            return ['pre-contract', 'gate-0', 'gate-1'];
-
-        case 'TPM':
-            return ['gate-2'];
-
-        case 'PSM':
-        case 'TAM':
-            return ['gate-3', 'post-launch'];
-
-        default:
-            return [];
-    }
+    // Both roles have access to all gates
+    return ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
 }
 
 /**
@@ -149,21 +94,21 @@ export function groupPartnersByGate(
 
 /**
  * Check if user can edit a partner record
- * Only assigned team members and admins can edit
+ * PDM (admin) can edit everything, PAM can edit partners they own
  */
 export function canEditPartner(user: AuthUser | null, partner: PartnerRecord): boolean {
     if (!user) return false;
 
-    // Admin can edit everything
-    if (user.role === 'Admin') return true;
+    // PDM (admin) can edit everything
+    if (user.role === 'PDM') return true;
 
-    // Must be assigned to the partner
+    // PAM can edit partners they own
     return canAccessPartner(user, partner);
 }
 
 /**
  * Check if user can submit a questionnaire for a partner
- * Based on role and gate
+ * PDM (admin) can submit anything, PAM can submit for partners they own
  */
 export function canSubmitQuestionnaire(
     user: AuthUser | null,
@@ -172,18 +117,15 @@ export function canSubmitQuestionnaire(
 ): boolean {
     if (!user) return false;
 
-    // Admin can submit anything
-    if (user.role === 'Admin') return true;
+    // PDM (admin) can submit anything
+    if (user.role === 'PDM') return true;
 
-    // Must have access to the partner
-    if (!canAccessPartner(user, partner)) return false;
-
-    // Must be able to view the gate
-    return canViewGate(user.role, gateId);
+    // PAM must have access to the partner
+    return canAccessPartner(user, partner);
 }
 
 /**
- * Get partners assigned to a specific user
+ * Get partners assigned to a specific user (PAM owner)
  */
 export function getAssignedPartners(
     partners: PartnerRecord[],
@@ -192,11 +134,7 @@ export function getAssignedPartners(
     const email = userEmail.toLowerCase();
 
     return partners.filter(partner =>
-        partner.pamOwner?.toLowerCase() === email ||
-        partner.pdmOwner?.toLowerCase() === email ||
-        partner.tpmOwner?.toLowerCase() === email ||
-        partner.psmOwner?.toLowerCase() === email ||
-        partner.tamOwner?.toLowerCase() === email
+        partner.pamOwner?.toLowerCase() === email
     );
 }
 
@@ -213,18 +151,10 @@ export function isPrimaryOwner(user: AuthUser | null, partner: PartnerRecord): b
  */
 export function getRoleDashboardMessage(role: UserRole): string {
     switch (role) {
-        case 'Admin':
-            return 'Viewing all partners across all gates';
-        case 'PAM':
-            return 'Viewing all your partners across all gates';
         case 'PDM':
-            return 'Viewing partners in Pre-Contract through Gate 1 (Ready to Sell)';
-        case 'TPM':
-            return 'Viewing partners in Gate 2 (Ready to Order)';
-        case 'PSM':
-            return 'Viewing partners in Gate 3 (Ready to Deliver) and Post-Launch';
-        case 'TAM':
-            return 'Viewing partners in Gate 3 (Ready to Deliver) and Post-Launch';
+            return 'Viewing all partners across all gates (Admin)';
+        case 'PAM':
+            return 'Viewing your assigned partners across all gates';
         default:
             return 'Viewing your assigned partners';
     }

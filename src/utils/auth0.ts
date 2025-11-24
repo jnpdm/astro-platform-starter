@@ -312,16 +312,28 @@ export async function getUser(): Promise<AuthUser | null> {
 
 /**
  * Extract user role from Auth0 user metadata
- * Checks app_metadata for role or roles array
+ * Checks multiple locations for role data:
+ * 1. Custom claim (from Auth0 Actions): https://your-app.com/role
+ * 2. app_metadata.role (if available)
+ * 3. user_metadata.role (fallback)
  * Returns default 'PAM' role if no role is assigned
  */
 export function getUserRole(auth0User: Auth0User): UserRole {
-    // Check app_metadata.role first
+    const validRoles: UserRole[] = ['PAM', 'PDM'];
+
+    // Check custom claim first (from Auth0 Actions)
+    const namespace = 'https://your-app.com';
+    const customClaimRole = auth0User[`${namespace}/role`];
+    if (customClaimRole && validRoles.includes(customClaimRole as UserRole)) {
+        console.log(`Role from custom claim: ${customClaimRole}`);
+        return customClaimRole as UserRole;
+    }
+
+    // Check app_metadata.role (requires Auth0 Action to include in token)
     if (auth0User?.app_metadata?.role) {
         const role = auth0User.app_metadata.role;
-        // Validate it's a valid UserRole
-        const validRoles: UserRole[] = ['PAM', 'PDM', 'TPM', 'PSM', 'TAM', 'Admin'];
-        if (validRoles.includes(role)) {
+        if (validRoles.includes(role as UserRole)) {
+            console.log(`Role from app_metadata: ${role}`);
             return role as UserRole;
         }
     }
@@ -333,14 +345,24 @@ export function getUserRole(auth0User: Auth0User): UserRole {
         auth0User.app_metadata.roles.length > 0
     ) {
         const role = auth0User.app_metadata.roles[0];
-        const validRoles: UserRole[] = ['PAM', 'PDM', 'TPM', 'PSM', 'TAM', 'Admin'];
-        if (validRoles.includes(role)) {
+        if (validRoles.includes(role as UserRole)) {
+            console.log(`Role from app_metadata.roles: ${role}`);
+            return role as UserRole;
+        }
+    }
+
+    // Check user_metadata.role (easier to set, included in tokens by default)
+    if (auth0User?.user_metadata?.role) {
+        const role = auth0User.user_metadata.role;
+        if (validRoles.includes(role as UserRole)) {
+            console.log(`Role from user_metadata: ${role}`);
             return role as UserRole;
         }
     }
 
     // Default to PAM if no role specified
     console.warn(`User ${auth0User.email} has no role assigned, defaulting to PAM`);
+    console.warn('Auth0 user data:', JSON.stringify(auth0User, null, 2));
     return 'PAM';
 }
 

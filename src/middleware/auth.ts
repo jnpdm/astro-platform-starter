@@ -10,7 +10,8 @@ import {
     logAuthError,
 } from '../utils/auth0-errors';
 
-export type UserRole = 'PAM' | 'PDM' | 'TPM' | 'PSM' | 'TAM' | 'Admin';
+// Simplified role system: PAM (Partner Account Manager) and PDM (Partner Development Manager - Admin)
+export type UserRole = 'PAM' | 'PDM';
 
 export interface AuthUser {
     id: string;
@@ -85,10 +86,10 @@ export function hasAnyRole(user: AuthUser | null, requiredRoles: UserRole[]): bo
 }
 
 /**
- * Check if user is admin
+ * Check if user is admin (PDM role has admin privileges)
  */
 export function isAdmin(user: AuthUser | null): boolean {
-    return hasRole(user, 'Admin');
+    return hasRole(user, 'PDM');
 }
 
 /**
