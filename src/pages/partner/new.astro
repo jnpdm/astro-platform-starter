@@ -6,10 +6,14 @@ import { getUserSession } from '../../middleware/auth';
 
 // Get current user from session (server-side, read from cookies)
 const cookieHeader = Astro.request.headers.get('cookie');
+console.log('[Partner New] Cookie header:', cookieHeader ? 'present' : 'missing');
+
 const currentUser = getUserSession(cookieHeader || undefined);
+console.log('[Partner New] Current user:', currentUser ? { email: currentUser.email, role: currentUser.role } : 'null');
 
 // Redirect if not authenticated (middleware should handle this, but double-check)
 if (!currentUser) {
+    console.log('[Partner New] No user session, redirecting to login');
     return Astro.redirect('/?redirect=/partner/new');
 }
 ---
