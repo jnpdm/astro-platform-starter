@@ -17,8 +17,7 @@
 
 export const prerender = false;
 
-import Gate1Questionnaire from '../../components/questionnaires/Gate1Questionnaire';
-import { ToastProvider } from '../../contexts/ToastContext';
+import Gate1QuestionnaireWithToast from '../../components/questionnaires/Gate1QuestionnaireWithToast';
 
 // Load the Gate 1 questionnaire config
 import gate1ConfigData from '../../config/questionnaires/gate-1-ready-to-sell.json';
@@ -102,11 +101,9 @@ const mode = existingSubmission ? 'view' : 'edit';
                 </div>
             </div>
 
-            <!-- Questionnaire Component -->
+            <!-- Questionnaire Component with Toast context -->
             <div id="questionnaire-content">
-                <ToastProvider client:load>
-                    <Gate1Questionnaire client:load config={gate1Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
-                </ToastProvider>
+                <Gate1QuestionnaireWithToast client:only="react" config={gate1Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
             </div>
         </div>
 

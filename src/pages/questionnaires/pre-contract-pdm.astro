@@ -16,8 +16,7 @@
 
 export const prerender = false;
 
-import PreContractQuestionnaire from '../../components/questionnaires/PreContractQuestionnaire';
-import { ToastProvider } from '../../contexts/ToastContext';
+import PreContractQuestionnaireWithToast from '../../components/questionnaires/PreContractQuestionnaireWithToast';
 
 // Load the pre-contract PDM questionnaire config
 import preContractConfigData from '../../config/questionnaires/pre-contract-pdm.json';
@@ -104,11 +103,15 @@ const mode = existingSubmission ? 'view' : 'edit';
                 </div>
             </div>
 
-            <!-- Questionnaire Component -->
+            <!-- Questionnaire Component with Toast context -->
             <div id="questionnaire-content">
-                <ToastProvider client:load>
-                    <PreContractQuestionnaire client:load config={preContractConfig} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
-                </ToastProvider>
+                <PreContractQuestionnaireWithToast
+                    client:only="react"
+                    config={preContractConfig}
+                    existingData={existingSubmission}
+                    partnerId={partnerId}
+                    mode={mode}
+                />
             </div>
         </div>
 
