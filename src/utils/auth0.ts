@@ -371,6 +371,9 @@ export function getUserRole(auth0User: Auth0User): UserRole {
  * Converts Auth0 user object to the application's AuthUser format
  */
 export function transformAuth0User(auth0User: Auth0User): AuthUser {
+    // Log the raw Auth0 user for debugging
+    console.log('🔍 Raw Auth0 user data:', JSON.stringify(auth0User, null, 2));
+
     // Validate required fields
     if (!auth0User.sub) {
         throw new Error('Auth0 user missing required "sub" field');
@@ -380,6 +383,8 @@ export function transformAuth0User(auth0User: Auth0User): AuthUser {
     }
 
     const role = getUserRole(auth0User);
+
+    console.log(`✅ Final role assigned: ${role} for user ${auth0User.email}`);
 
     return {
         id: auth0User.sub,

@@ -1,0 +1,212 @@
+---
+export const prerender = false;
+
+import HubLayout from '../../layouts/HubLayout.astro';
+import { getUserSession } from '../../middleware/auth';
+
+// Get current user from session
+const currentUser = getUserSession();
+
+// Redirect if not authenticated (middleware should handle this, but double-check)
+if (!currentUser) {
+    return Astro.redirect('/?redirect=/partner/new');
+}
+---
+
+<HubLayout title="Create New Partner" description="Add a new partner to the onboarding system">
+    <div class="py-8">
+        <div class="mb-6">
+            <h1 class="text-4xl font-bold mb-2">Create New Partner</h1>
+            <p class="text-gray-300">Add a new partner to the onboarding system</p>
+        </div>
+
+        <!-- Success Message -->
+        <div id="success-message" class="hidden bg-green-900/30 border border-green-700 text-green-200 px-4 py-3 rounded mb-6">
+            <p class="font-semibold mb-1">Partner Created Successfully!</p>
+            <p class="text-sm">Redirecting to partner details...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+            <p class="font-semibold mb-1">Error Creating Partner</p>
+            <p id="error-text" class="text-sm"></p>
+        </div>
+
+        <!-- Partner Creation Form -->
+        <form id="partner-form" class="max-w-4xl">
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-6">
+                <!-- Basic Information -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Basic Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="partnerName" class="block text-sm font-medium mb-2">
+                                Partner Name <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="partnerName"
+                                name="partnerName"
+                                required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="Enter partner name"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="tier" class="block text-sm font-medium mb-2">
+                                Tier <span class="text-red-400">*</span>
+                            </label>
+                            <select
+                                id="tier"
+                                name="tier"
+                                required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="">Select tier...</option>
+                                <option value="strategic">Strategic</option>
+                                <option value="premium">Premium</option>
+                                <option value="standard">Standard</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="pamOwner" class="block text-sm font-medium mb-2">
+                                PAM Owner <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="email"
+                                id="pamOwner"
+                                name="pamOwner"
+                                required
+                                value={currentUser.email}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="pam@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="targetLaunchDate" class="block text-sm font-medium mb-2"> Target Launch Date </label>
+                            <input
+                                type="date"
+                                id="targetLaunchDate"
+                                name="targetLaunchDate"
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Details -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Additional Details</h2>
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label for="description" class="block text-sm font-medium mb-2"> Description </label>
+                            <textarea
+                                id="description"
+                                name="description"
+                                rows="3"
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="Brief description of the partner..."></textarea>
+                        </div>
+
+                        <div>
+                            <label for="notes" class="block text-sm font-medium mb-2"> Notes </label>
+                            <textarea
+                                id="notes"
+                                name="notes"
+                                rows="3"
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="Additional notes..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex gap-4 pt-4 border-t border-gray-700">
+                    <button type="submit" id="submit-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium transition-colors">
+                        Create Partner
+                    </button>
+                    <a href="/" class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded font-medium transition-colors"> Cancel </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        const form = document.getElementById('partner-form') as HTMLFormElement;
+        const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating...';
+
+            // Hide messages
+            successMessage?.classList.add('hidden');
+            errorMessage?.classList.add('hidden');
+
+            try {
+                // Get form data
+                const formData = new FormData(form);
+                const data: Record<string, any> = {
+                    partnerName: formData.get('partnerName'),
+                    tier: formData.get('tier'),
+                    pamOwner: formData.get('pamOwner'),
+                    description: formData.get('description') || '',
+                    notes: formData.get('notes') || '',
+                    currentGate: 'pre-contract' // Default starting gate
+                };
+
+                // Add target launch date if provided
+                const targetLaunchDate = formData.get('targetLaunchDate');
+                if (targetLaunchDate) {
+                    data.targetLaunchDate = targetLaunchDate;
+                }
+
+                console.log('Creating partner with data:', data);
+
+                // Submit to API
+                const response = await fetch('/api/partners', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to create partner');
+                }
+
+                // Show success message
+                successMessage?.classList.remove('hidden');
+
+                // Redirect to partner details page
+                setTimeout(() => {
+                    window.location.href = `/partner/${result.data.id}`;
+                }, 1500);
+            } catch (error) {
+                console.error('Error creating partner:', error);
+
+                // Show error message
+                if (errorText) {
+                    errorText.textContent = error instanceof Error ? error.message : 'An unexpected error occurred';
+                }
+                errorMessage?.classList.remove('hidden');
+
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Create Partner';
+            }
+        });
+    </script>
+</HubLayout>
