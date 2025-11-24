@@ -4,8 +4,9 @@ export const prerender = false;
 import HubLayout from '../../layouts/HubLayout.astro';
 import { getUserSession } from '../../middleware/auth';
 
-// Get current user from session
-const currentUser = getUserSession();
+// Get current user from session (server-side, read from cookies)
+const cookieHeader = Astro.request.headers.get('cookie');
+const currentUser = getUserSession(cookieHeader || undefined);
 
 // Redirect if not authenticated (middleware should handle this, but double-check)
 if (!currentUser) {
