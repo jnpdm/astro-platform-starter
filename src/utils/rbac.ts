@@ -14,15 +14,27 @@ import type { AuthUser } from '../middleware/auth';
  * - PAM can access partners they own
  */
 export function canAccessPartner(user: AuthUser | null, partner: PartnerRecord): boolean {
-    if (!user) return false;
+    if (!user) {
+        console.log('[RBAC] No user, denying access');
+        return false;
+    }
 
     // PDM has full access (admin role)
-    if (user.role === 'PDM') return true;
+    if (user.role === 'PDM') {
+        console.log('[RBAC] User is PDM (admin), granting access to partner:', partner.id);
+        return true;
+    }
 
     const userEmail = user.email.toLowerCase();
 
     // PAM can access partners they own
     const isOwner = partner.pamOwner?.toLowerCase() === userEmail;
+    console.log('[RBAC] PAM access check:', {
+        partnerName: partner.partnerName,
+        pamOwner: partner.pamOwner,
+        userEmail,
+        isOwner
+    });
 
     return isOwner;
 }
@@ -38,15 +50,27 @@ export function filterPartnersByRole(
     partners: PartnerRecord[],
     user: AuthUser | null
 ): PartnerRecord[] {
-    if (!user) return [];
+    console.log('[RBAC] Filtering partners:', {
+        totalPartners: partners.length,
+        userRole: user?.role,
+        userEmail: user?.email
+    });
+
+    if (!user) {
+        console.log('[RBAC] No user, returning empty array');
+        return [];
+    }
 
     // PDM (admin) sees everything
     if (user.role === 'PDM') {
+        console.log('[RBAC] User is PDM, returning all partners:', partners.length);
         return partners;
     }
 
     // PAM sees all gates for partners they own
-    return partners.filter(partner => canAccessPartner(user, partner));
+    const filtered = partners.filter(partner => canAccessPartner(user, partner));
+    console.log('[RBAC] Filtered partners for PAM:', filtered.length);
+    return filtered;
 }
 
 /**
