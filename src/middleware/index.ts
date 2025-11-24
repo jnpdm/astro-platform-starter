@@ -34,8 +34,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Check if route requires authentication
     if (isProtectedRoute(pathname)) {
-        // Get user session from storage
-        const user: AuthUser | null = getUserSession();
+        // Get user session from cookies (server-side)
+        const cookieHeader = context.request.headers.get('cookie');
+        const user: AuthUser | null = getUserSession(cookieHeader || undefined);
 
         // If not authenticated, handle based on route type
         if (!user) {

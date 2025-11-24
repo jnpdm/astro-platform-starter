@@ -231,9 +231,10 @@ function isLocalStorageAvailable(): boolean {
 }
 
 /**
- * Store user session in localStorage
+ * Store user session in both localStorage and cookies
  * Works with Auth0 user data and maintains backward compatibility
  * Handles localStorage errors (quota exceeded, access denied)
+ * Stores in cookies so server-side middleware can access
  */
 export function storeUserSession(user: AuthUser): void {
     if (typeof window === 'undefined') {
@@ -264,12 +265,19 @@ export function storeUserSession(user: AuthUser): void {
             expiresAt: Date.now() + SESSION_EXPIRATION_MS,
         };
 
+        // Store in localStorage (for client-side access)
         localStorage.setItem('kuiper_user', JSON.stringify(user));
         localStorage.setItem('kuiper_user_role', user.role);
         localStorage.setItem('kuiper_session_metadata', JSON.stringify({
             timestamp: sessionData.timestamp,
             expiresAt: sessionData.expiresAt,
         }));
+
+        // Store in cookies (for server-side middleware access)
+        // Use secure, httpOnly-like settings (SameSite=Strict for CSRF protection)
+        const cookieOptions = `path=/; max-age=${SESSION_EXPIRATION_MS / 1000}; SameSite=Strict${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+        document.cookie = `kuiper_user=${encodeURIComponent(JSON.stringify(user))}; ${cookieOptions}`;
+        document.cookie = `kuiper_user_role=${encodeURIComponent(user.role)}; ${cookieOptions}`;
     } catch (error) {
         // Use centralized storage error handling
         handleStorageError(error);
@@ -284,6 +292,12 @@ export function storeUserSession(user: AuthUser): void {
                     timestamp: Date.now(),
                     expiresAt: Date.now() + SESSION_EXPIRATION_MS,
                 }));
+
+                // Also retry cookie storage
+                const cookieOptions = `path=/; max-age=${SESSION_EXPIRATION_MS / 1000}; SameSite=Strict${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+                document.cookie = `kuiper_user=${encodeURIComponent(JSON.stringify(user))}; ${cookieOptions}`;
+                document.cookie = `kuiper_user_role=${encodeURIComponent(user.role)}; ${cookieOptions}`;
+
                 console.log('Session stored successfully after clearing old data');
             } catch (retryError) {
                 logAuthError(retryError, {
@@ -297,15 +311,48 @@ export function storeUserSession(user: AuthUser): void {
 }
 
 /**
+ * Get cookie value by name (for server-side access)
+ */
+function getCookie(name: string, cookieString?: string): string | null {
+    const cookies = cookieString || (typeof document !== 'undefined' ? document.cookie : '');
+    const match = cookies.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    return match ? decodeURIComponent(match[2]) : null;
+}
+
+/**
  * Retrieve user session from storage
  * Validates and returns Auth0 session data
  * Detects and clears corrupted or expired session data
+ * Works both client-side (localStorage) and server-side (cookies)
  */
-export function getUserSession(): AuthUser | null {
+export function getUserSession(cookieString?: string): AuthUser | null {
+    // Server-side: read from cookies
     if (typeof window === 'undefined') {
-        return null;
+        if (!cookieString) {
+            return null;
+        }
+
+        try {
+            const userJson = getCookie('kuiper_user', cookieString);
+            if (!userJson) {
+                return null;
+            }
+
+            const userData = JSON.parse(userJson);
+
+            // Validate user data
+            if (!isValidUserSession(userData)) {
+                return null;
+            }
+
+            return userData;
+        } catch (error) {
+            console.error('Error reading session from cookies:', error);
+            return null;
+        }
     }
 
+    // Client-side: read from localStorage
     // Check if localStorage is available
     if (!isLocalStorageAvailable()) {
         return null;
@@ -367,7 +414,7 @@ export function getUserSession(): AuthUser | null {
 
 /**
  * Clear user session
- * Removes all Auth0 session data from localStorage
+ * Removes all Auth0 session data from localStorage and cookies
  */
 export function clearUserSession(): void {
     if (typeof window === 'undefined') {
@@ -375,9 +422,15 @@ export function clearUserSession(): void {
     }
 
     try {
+        // Clear localStorage
         localStorage.removeItem('kuiper_user');
         localStorage.removeItem('kuiper_user_role');
         localStorage.removeItem('kuiper_session_metadata');
+
+        // Clear cookies by setting them to expire immediately
+        document.cookie = 'kuiper_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+        document.cookie = 'kuiper_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Strict';
+
         // The Auth0 SDK manages its own cache separately
     } catch (error) {
         console.error('Failed to clear user session:', error);
@@ -386,6 +439,10 @@ export function clearUserSession(): void {
             localStorage.setItem('kuiper_user', '');
             localStorage.setItem('kuiper_user_role', '');
             localStorage.setItem('kuiper_session_metadata', '');
+
+            // Try to clear cookies again
+            document.cookie = 'kuiper_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+            document.cookie = 'kuiper_user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         } catch (fallbackError) {
             // If even this fails, localStorage is likely inaccessible
             console.error('localStorage is inaccessible');
