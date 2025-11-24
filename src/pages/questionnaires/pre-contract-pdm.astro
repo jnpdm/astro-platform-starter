@@ -66,7 +66,7 @@ const mode = existingSubmission ? 'view' : 'edit';
 
         <!-- Questionnaire Component -->
         <ToastProvider client:load>
-            <PreContractQuestionnaire config={preContractConfig} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+            <PreContractQuestionnaire client:load config={preContractConfig} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
         </ToastProvider>
     </div>
 </HubLayout>

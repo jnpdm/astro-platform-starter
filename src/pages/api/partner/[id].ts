@@ -319,3 +319,129 @@ function validatePartnerUpdate(data: any): string | null {
 
     return null;
 }
+
+/**
+ * DELETE /api/partner/[id]
+ * Delete a specific partner record (PDM only)
+ */
+export const DELETE: APIRoute = async ({ params, request }) => {
+    try {
+        const { id } = params;
+
+        if (!id) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: 'Partner ID is required'
+                }),
+                {
+                    status: 400,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        }
+
+        // Get current user
+        const cookieHeader = request.headers.get('cookie');
+        const currentUser = getUserSession(cookieHeader || undefined);
+
+        if (!currentUser) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: 'Authentication required'
+                }),
+                {
+                    status: 401,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        }
+
+        // Only PDM (admin) can delete partners
+        if (currentUser.role !== 'PDM') {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: 'Only administrators can delete partners'
+                }),
+                {
+                    status: 403,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        }
+
+        // Check if partner exists
+        const partner = await getPartner(id);
+
+        if (!partner) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: 'Partner not found'
+                }),
+                {
+                    status: 404,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        }
+
+        // Delete the partner
+        const { deletePartner } = await import('../../../utils/storage');
+        await deletePartner(id);
+
+        return new Response(
+            JSON.stringify({
+                success: true,
+                message: 'Partner deleted successfully'
+            }),
+            {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+    } catch (error) {
+        console.error('Error deleting partner:', error);
+
+        if (error instanceof StorageError) {
+            return new Response(
+                JSON.stringify({
+                    success: false,
+                    error: error.message,
+                    code: error.code
+                }),
+                {
+                    status: 500,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        }
+
+        return new Response(
+            JSON.stringify({
+                success: false,
+                error: 'Failed to delete partner'
+            }),
+            {
+                status: 500,
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+    }
+};
