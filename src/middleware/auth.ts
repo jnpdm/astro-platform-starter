@@ -454,15 +454,12 @@ export function clearUserSession(): void {
 /**
  * Role-based route access control
  * Defines which roles can access which routes
+ * Simplified to PAM and PDM (admin) only
  */
 export const ROLE_ROUTE_ACCESS: Record<string, UserRole[]> = {
-    '/partner': ['PAM', 'PDM', 'TPM', 'PSM', 'TAM', 'Admin'],
-    '/questionnaires/pre-contract-pdm': ['PAM', 'PDM', 'Admin'],
-    '/questionnaires/gate-0-kickoff': ['PAM', 'PDM', 'Admin'],
-    '/questionnaires/gate-1-ready-to-sell': ['PAM', 'PDM', 'TPM', 'Admin'],
-    '/questionnaires/gate-2-ready-to-order': ['TPM', 'Admin'],
-    '/questionnaires/gate-3-ready-to-deliver': ['PSM', 'TAM', 'Admin'],
-    '/reports': ['Admin', 'PAM'],
+    '/partner': ['PAM', 'PDM'],  // Both roles can access partners
+    '/questionnaires': ['PAM', 'PDM'],  // Both roles can access questionnaires
+    '/reports': ['PAM', 'PDM'],  // Both roles can access reports
 };
 
 /**

@@ -322,18 +322,37 @@ export function getUserRole(auth0User: Auth0User): UserRole {
     const validRoles: UserRole[] = ['PAM', 'PDM'];
 
     // Check custom claim first (from Auth0 Actions)
-    const namespace = 'https://your-app.com';
-    const customClaimRole = auth0User[`${namespace}/role`];
-    if (customClaimRole && validRoles.includes(customClaimRole as UserRole)) {
-        console.log(`Role from custom claim: ${customClaimRole}`);
-        return customClaimRole as UserRole;
+    // Try multiple namespace variations (Auth0 Action may add extra slash)
+    const namespaces = [
+        'https://pdmgates.netlify.app//',  // Your actual namespace with double slash
+        'https://pdmgates.netlify.app/',   // Single slash version
+        'https://your-app.com//',
+        'https://your-app.com/'
+    ];
+
+    // Check direct role claim
+    for (const namespace of namespaces) {
+        const customClaimRole = auth0User[`${namespace}role`];
+        if (customClaimRole && validRoles.includes(customClaimRole as UserRole)) {
+            console.log(`✅ Role from custom claim (${namespace}role): ${customClaimRole}`);
+            return customClaimRole as UserRole;
+        }
+    }
+
+    // Check app_metadata from custom claim
+    for (const namespace of namespaces) {
+        const customAppMetadata = auth0User[`${namespace}app_metadata`];
+        if (customAppMetadata?.role && validRoles.includes(customAppMetadata.role as UserRole)) {
+            console.log(`✅ Role from custom claim app_metadata (${namespace}app_metadata): ${customAppMetadata.role}`);
+            return customAppMetadata.role as UserRole;
+        }
     }
 
     // Check app_metadata.role (requires Auth0 Action to include in token)
     if (auth0User?.app_metadata?.role) {
         const role = auth0User.app_metadata.role;
         if (validRoles.includes(role as UserRole)) {
-            console.log(`Role from app_metadata: ${role}`);
+            console.log(`✅ Role from app_metadata: ${role}`);
             return role as UserRole;
         }
     }
@@ -346,7 +365,7 @@ export function getUserRole(auth0User: Auth0User): UserRole {
     ) {
         const role = auth0User.app_metadata.roles[0];
         if (validRoles.includes(role as UserRole)) {
-            console.log(`Role from app_metadata.roles: ${role}`);
+            console.log(`✅ Role from app_metadata.roles: ${role}`);
             return role as UserRole;
         }
     }
@@ -355,13 +374,13 @@ export function getUserRole(auth0User: Auth0User): UserRole {
     if (auth0User?.user_metadata?.role) {
         const role = auth0User.user_metadata.role;
         if (validRoles.includes(role as UserRole)) {
-            console.log(`Role from user_metadata: ${role}`);
+            console.log(`✅ Role from user_metadata: ${role}`);
             return role as UserRole;
         }
     }
 
     // Default to PAM if no role specified
-    console.warn(`User ${auth0User.email} has no role assigned, defaulting to PAM`);
+    console.warn(`⚠️ User ${auth0User.email} has no role assigned, defaulting to PAM`);
     console.warn('Auth0 user data:', JSON.stringify(auth0User, null, 2));
     return 'PAM';
 }
