@@ -67,8 +67,11 @@ export async function getPartner(partnerId: string): Promise<PartnerRecord | nul
             return deserializePartner(data as any);
         });
     } catch (error) {
+        console.error('[Storage] Error getting partner:', error);
+
         // In development, Netlify Blobs might not be available
-        if (import.meta.env.DEV) {
+        // But if we're in a test environment with mocked errors, throw them
+        if (import.meta.env.DEV && !import.meta.env.VITEST) {
             console.warn(`Netlify Blobs not available in development, partner ${partnerId} not found`);
             return null;
         }
@@ -113,15 +116,14 @@ export async function savePartner(partner: PartnerRecord): Promise<void> {
         console.error('[Storage] Error saving partner:', error);
 
         // In development, Netlify Blobs might not be available
-        // Just log the partner data instead of throwing error
-        if (import.meta.env.DEV) {
+        // But if we're in a test environment with mocked errors, throw them
+        if (import.meta.env.DEV && !import.meta.env.VITEST) {
             console.warn('[Storage] Netlify Blobs not available in development');
             console.log('[Storage] Would save partner:', partner);
             return; // Success in dev mode
         }
 
-        // In production, this is a real error
-        console.error('[Storage] Production storage error:', error);
+        // In production or test mode, this is a real error
         throw new StorageError(
             `Failed to save partner ${partner.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
             'SAVE_PARTNER_ERROR',
@@ -161,8 +163,8 @@ export async function listPartners(): Promise<PartnerRecord[]> {
         console.error('[Storage] Error listing partners:', error);
 
         // In development, Netlify Blobs might not be available
-        // Return empty array instead of throwing error
-        if (import.meta.env.DEV) {
+        // But if we're in a test environment with mocked errors, throw them
+        if (import.meta.env.DEV && !import.meta.env.VITEST) {
             console.warn('[Storage] Netlify Blobs not available in development, returning empty partner list');
             return [];
         }
@@ -187,8 +189,11 @@ export async function deletePartner(partnerId: string): Promise<void> {
             await store.delete(partnerId);
         });
     } catch (error) {
+        console.error('[Storage] Error deleting partner:', error);
+
         // In development, Netlify Blobs might not be available
-        if (import.meta.env.DEV) {
+        // But if we're in a test environment with mocked errors, throw them
+        if (import.meta.env.DEV && !import.meta.env.VITEST) {
             console.warn(`Netlify Blobs not available in development, would delete partner ${partnerId}`);
             return; // Success in dev mode
         }

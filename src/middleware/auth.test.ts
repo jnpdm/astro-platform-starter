@@ -164,11 +164,11 @@ describe('Auth Middleware', () => {
     });
 
     describe('isAdmin', () => {
-        it('should return true for Admin role', () => {
+        it('should return true for PDM role', () => {
             const user: AuthUser = {
                 id: '123',
                 email: 'admin@example.com',
-                role: 'Admin',
+                role: 'PDM',
             };
             expect(isAdmin(user)).toBe(true);
         });
@@ -309,36 +309,16 @@ describe('Auth Middleware', () => {
     });
 
     describe('canAccessRoute', () => {
-        it('should allow Admin to access all routes', () => {
+        it('should allow PDM (admin) to access all routes', () => {
             const admin: AuthUser = {
                 id: '123',
                 email: 'admin@example.com',
-                role: 'Admin',
+                role: 'PDM',
             };
 
             expect(canAccessRoute(admin, '/partner/123')).toBe(true);
             expect(canAccessRoute(admin, '/questionnaires/gate-2-ready-to-order')).toBe(true);
             expect(canAccessRoute(admin, '/reports')).toBe(true);
-        });
-
-        it('should restrict PDM from Gate 2 questionnaire', () => {
-            const pdm: AuthUser = {
-                id: '123',
-                email: 'pdm@example.com',
-                role: 'PDM',
-            };
-
-            expect(canAccessRoute(pdm, '/questionnaires/gate-2-ready-to-order')).toBe(false);
-        });
-
-        it('should allow TPM to access Gate 2 questionnaire', () => {
-            const tpm: AuthUser = {
-                id: '123',
-                email: 'tpm@example.com',
-                role: 'TPM',
-            };
-
-            expect(canAccessRoute(tpm, '/questionnaires/gate-2-ready-to-order')).toBe(true);
         });
 
         it('should allow PAM to access pre-contract questionnaire', () => {

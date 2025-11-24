@@ -1,0 +1,419 @@
+---
+/**
+ * Partner Edit Page
+ * Allows authorized users (PAM/PDM) to edit partner information
+ */
+
+export const prerender = false;
+
+import HubLayout from '../../../layouts/HubLayout.astro';
+import { getPartner } from '../../../utils/storage';
+import { canEditPartner } from '../../../utils/rbac';
+import { getUserSession } from '../../../middleware/auth';
+
+const { id } = Astro.params;
+
+if (!id) {
+    return Astro.redirect('/?error=invalid-partner-id');
+}
+
+// Get current user from session (server-side, read from cookies)
+const cookieHeader = Astro.request.headers.get('cookie');
+console.log('[Partner Edit] Cookie header:', cookieHeader ? 'present' : 'missing');
+
+const currentUser = getUserSession(cookieHeader || undefined);
+console.log('[Partner Edit] Current user:', currentUser ? { email: currentUser.email, role: currentUser.role } : 'null');
+
+// Redirect if not authenticated
+if (!currentUser) {
+    console.log('[Partner Edit] No user session, redirecting to login');
+    return Astro.redirect(`/?redirect=/partner/edit/${id}`);
+}
+
+// Fetch partner data
+let partner;
+try {
+    partner = await getPartner(id);
+} catch (e) {
+    console.error('[Partner Edit] Failed to load partner:', e);
+    return Astro.redirect('/?error=partner-load-failed');
+}
+
+// Check if partner exists
+if (!partner) {
+    console.log('[Partner Edit] Partner not found:', id);
+    return Astro.redirect('/?error=partner-not-found');
+}
+
+// Check edit permissions
+if (!canEditPartner(currentUser, partner)) {
+    console.log('[Partner Edit] Access denied for user:', currentUser.email);
+    return Astro.redirect(`/partner/${id}?error=access-denied`);
+}
+
+// Helper function to format date for input field (YYYY-MM-DD)
+function formatDateForInput(date: Date | string | undefined): string {
+    if (!date) return '';
+    const d = typeof date === 'string' ? new Date(date) : date;
+    return d.toISOString().split('T')[0];
+}
+---
+
+<HubLayout title={`Edit ${partner.partnerName}`} description="Update partner information">
+    <div class="py-8">
+        <div class="mb-6">
+            <a href={`/partner/${partner.id}`} class="text-blue-400 hover:text-blue-300 text-sm mb-4 inline-block"> ← Back to Partner Details </a>
+            <h1 class="text-4xl font-bold mb-2">Edit Partner</h1>
+            <p class="text-gray-300">{partner.partnerName}</p>
+        </div>
+
+        <!-- Success Message -->
+        <div id="success-message" class="hidden bg-green-900/30 border border-green-700 text-green-200 px-4 py-3 rounded mb-6">
+            <p class="font-semibold mb-1">Partner Updated Successfully!</p>
+            <p class="text-sm">Redirecting to partner details...</p>
+        </div>
+
+        <!-- Error Message -->
+        <div id="error-message" class="hidden bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded mb-6">
+            <p class="font-semibold mb-1">Error Updating Partner</p>
+            <p id="error-text" class="text-sm"></p>
+        </div>
+
+        <!-- Partner Edit Form -->
+        <form id="partner-form" class="max-w-4xl">
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6 space-y-6">
+                <!-- Basic Information -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Basic Information</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="partnerName" class="block text-sm font-medium mb-2">
+                                Partner Name <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="text"
+                                id="partnerName"
+                                name="partnerName"
+                                required
+                                value={partner.partnerName}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="Enter partner name"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="tier" class="block text-sm font-medium mb-2">
+                                Tier <span class="text-red-400">*</span>
+                            </label>
+                            <select
+                                id="tier"
+                                name="tier"
+                                required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="">Select tier...</option>
+                                <option value="tier-0" selected={partner.tier === 'tier-0'}>Tier 0 (Strategic)</option>
+                                <option value="tier-1" selected={partner.tier === 'tier-1'}>Tier 1 (Premium)</option>
+                                <option value="tier-2" selected={partner.tier === 'tier-2'}>Tier 2 (Standard)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Team Assignments -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Team Assignments</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="pamOwner" class="block text-sm font-medium mb-2">
+                                PAM Owner <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="email"
+                                id="pamOwner"
+                                name="pamOwner"
+                                required
+                                value={partner.pamOwner}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="pam@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="pdmOwner" class="block text-sm font-medium mb-2"> PDM Owner </label>
+                            <input
+                                type="email"
+                                id="pdmOwner"
+                                name="pdmOwner"
+                                value={partner.pdmOwner || ''}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="pdm@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="tpmOwner" class="block text-sm font-medium mb-2"> TPM Owner </label>
+                            <input
+                                type="email"
+                                id="tpmOwner"
+                                name="tpmOwner"
+                                value={partner.tpmOwner || ''}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="tpm@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="psmOwner" class="block text-sm font-medium mb-2"> PSM Owner </label>
+                            <input
+                                type="email"
+                                id="psmOwner"
+                                name="psmOwner"
+                                value={partner.psmOwner || ''}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="psm@example.com"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="tamOwner" class="block text-sm font-medium mb-2"> TAM Owner </label>
+                            <input
+                                type="email"
+                                id="tamOwner"
+                                name="tamOwner"
+                                value={partner.tamOwner || ''}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="tam@example.com"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Contract Details -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Contract Details</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="contractType" class="block text-sm font-medium mb-2">
+                                Contract Type <span class="text-red-400">*</span>
+                            </label>
+                            <select
+                                id="contractType"
+                                name="contractType"
+                                required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="">Select type...</option>
+                                <option value="PPA" selected={partner.contractType === 'PPA'}>PPA</option>
+                                <option value="Distribution" selected={partner.contractType === 'Distribution'}>Distribution</option>
+                                <option value="Sales-Agent" selected={partner.contractType === 'Sales-Agent'}>Sales Agent</option>
+                                <option value="Other" selected={partner.contractType === 'Other'}>Other</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label for="contractSignedDate" class="block text-sm font-medium mb-2"> Contract Signed Date </label>
+                            <input
+                                type="date"
+                                id="contractSignedDate"
+                                name="contractSignedDate"
+                                value={formatDateForInput(partner.contractSignedDate)}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="ccv" class="block text-sm font-medium mb-2">
+                                CCV (Contractually Committed Value) <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="ccv"
+                                name="ccv"
+                                required
+                                min="0"
+                                step="1000"
+                                value={partner.ccv}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="0"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="lrp" class="block text-sm font-medium mb-2">
+                                LRP (Launch Revenue Potential) <span class="text-red-400">*</span>
+                            </label>
+                            <input
+                                type="number"
+                                id="lrp"
+                                name="lrp"
+                                required
+                                min="0"
+                                step="1000"
+                                value={partner.lrp}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                                placeholder="0"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Timeline -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Timeline</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="onboardingStartDate" class="block text-sm font-medium mb-2"> Onboarding Start Date </label>
+                            <input
+                                type="date"
+                                id="onboardingStartDate"
+                                name="onboardingStartDate"
+                                value={formatDateForInput(partner.onboardingStartDate)}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="targetLaunchDate" class="block text-sm font-medium mb-2"> Target Launch Date </label>
+                            <input
+                                type="date"
+                                id="targetLaunchDate"
+                                name="targetLaunchDate"
+                                value={formatDateForInput(partner.targetLaunchDate)}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+
+                        <div>
+                            <label for="actualLaunchDate" class="block text-sm font-medium mb-2"> Actual Launch Date </label>
+                            <input
+                                type="date"
+                                id="actualLaunchDate"
+                                name="actualLaunchDate"
+                                value={formatDateForInput(partner.actualLaunchDate)}
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            />
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gate Progression -->
+                <div>
+                    <h2 class="text-xl font-semibold mb-4">Gate Progression</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="currentGate" class="block text-sm font-medium mb-2">
+                                Current Gate <span class="text-red-400">*</span>
+                            </label>
+                            <select
+                                id="currentGate"
+                                name="currentGate"
+                                required
+                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
+                            >
+                                <option value="pre-contract" selected={partner.currentGate === 'pre-contract'}>Pre-Contract</option>
+                                <option value="gate-0" selected={partner.currentGate === 'gate-0'}>Gate 0 - Kickoff</option>
+                                <option value="gate-1" selected={partner.currentGate === 'gate-1'}>Gate 1 - Ready to Sell</option>
+                                <option value="gate-2" selected={partner.currentGate === 'gate-2'}>Gate 2 - Ready to Order</option>
+                                <option value="gate-3" selected={partner.currentGate === 'gate-3'}>Gate 3 - Ready to Deliver</option>
+                                <option value="post-launch" selected={partner.currentGate === 'post-launch'}>Post-Launch</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="flex gap-4 pt-4 border-t border-gray-700">
+                    <button type="submit" id="submit-btn" class="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded font-medium transition-colors">
+                        Update Partner
+                    </button>
+                    <a href={`/partner/${partner.id}`} class="px-6 py-2 bg-gray-700 hover:bg-gray-600 rounded font-medium transition-colors"> Cancel </a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <script define:vars={{ partnerId: id }}>
+        const form = document.getElementById('partner-form');
+        const submitBtn = document.getElementById('submit-btn');
+        const successMessage = document.getElementById('success-message');
+        const errorMessage = document.getElementById('error-message');
+        const errorText = document.getElementById('error-text');
+
+        form?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Disable submit button
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Updating...';
+
+            // Hide messages
+            successMessage?.classList.add('hidden');
+            errorMessage?.classList.add('hidden');
+
+            try {
+                // Get form data
+                const formData = new FormData(form);
+                const data = {
+                    partnerName: formData.get('partnerName'),
+                    tier: formData.get('tier'),
+                    pamOwner: formData.get('pamOwner'),
+                    pdmOwner: formData.get('pdmOwner') || null,
+                    tpmOwner: formData.get('tpmOwner') || null,
+                    psmOwner: formData.get('psmOwner') || null,
+                    tamOwner: formData.get('tamOwner') || null,
+                    contractType: formData.get('contractType'),
+                    contractSignedDate: formData.get('contractSignedDate') || null,
+                    ccv: parseFloat(formData.get('ccv')),
+                    lrp: parseFloat(formData.get('lrp')),
+                    onboardingStartDate: formData.get('onboardingStartDate') || null,
+                    targetLaunchDate: formData.get('targetLaunchDate') || null,
+                    actualLaunchDate: formData.get('actualLaunchDate') || null,
+                    currentGate: formData.get('currentGate')
+                };
+
+                console.log('Updating partner with data:', data);
+
+                // Submit to API
+                const response = await fetch(`/api/partner/${partnerId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+                console.log('API response:', result);
+
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Failed to update partner');
+                }
+
+                // Show success message
+                successMessage?.classList.remove('hidden');
+
+                console.log('Partner updated successfully:', result.data);
+                console.log('Redirecting to:', `/partner/${partnerId}`);
+
+                // Redirect to partner details page
+                setTimeout(() => {
+                    window.location.href = `/partner/${partnerId}`;
+                }, 1500);
+            } catch (error) {
+                console.error('Error updating partner:', error);
+
+                // Show error message
+                if (errorText) {
+                    errorText.textContent = error instanceof Error ? error.message : 'An unexpected error occurred';
+                }
+                errorMessage?.classList.remove('hidden');
+
+                // Re-enable submit button
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Update Partner';
+            }
+        });
+    </script>
+</HubLayout>

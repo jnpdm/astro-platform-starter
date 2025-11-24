@@ -16,7 +16,7 @@ import type { PartnerRecord } from '../../../types/partner';
  * GET /api/partner/[id]
  * Retrieve a specific partner record (with access control)
  */
-export const GET: APIRoute = async ({ params }) => {
+export const GET: APIRoute = async ({ params, request }) => {
     try {
         const { id } = params;
 
@@ -53,7 +53,8 @@ export const GET: APIRoute = async ({ params }) => {
         }
 
         // Check access control
-        const currentUser = getUserSession();
+        const cookieHeader = request.headers.get('cookie');
+        const currentUser = getUserSession(cookieHeader || undefined);
         if (!canAccessPartner(currentUser, partner)) {
             return new Response(
                 JSON.stringify({
@@ -157,7 +158,8 @@ export const PUT: APIRoute = async ({ params, request }) => {
         }
 
         // Check edit permission
-        const currentUser = getUserSession();
+        const cookieHeader = request.headers.get('cookie');
+        const currentUser = getUserSession(cookieHeader || undefined);
         if (!canEditPartner(currentUser, existingPartner)) {
             return new Response(
                 JSON.stringify({

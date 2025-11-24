@@ -419,12 +419,14 @@ const submissionsByQuestionnaire = submissions.reduce(
                         <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
                             <h3 class="text-lg font-bold mb-4">Quick Actions</h3>
                             <div class="space-y-2">
-                                <a
-                                    href={`/api/partner/${partner.id}`}
-                                    class="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded transition-colors"
-                                >
-                                    Edit Partner
-                                </a>
+                                {canEdit && (
+                                    <a
+                                        href={`/partner/edit/${partner.id}`}
+                                        class="block w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-center rounded transition-colors"
+                                    >
+                                        Edit Partner
+                                    </a>
+                                )}
                                 <a
                                     href="/questionnaires/pre-contract-pdm"
                                     class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-center rounded transition-colors"

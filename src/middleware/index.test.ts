@@ -24,6 +24,14 @@ describe('Astro Middleware', () => {
         const url = new URL(`http://localhost${pathname}${search}`);
         return {
             url,
+            request: {
+                headers: {
+                    get: vi.fn((name: string) => {
+                        if (name === 'cookie') return null;
+                        return null;
+                    })
+                }
+            },
             redirect: vi.fn((path: string) => ({ type: 'redirect', path })),
             locals: {} as any,
         };
