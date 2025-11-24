@@ -31,6 +31,8 @@ import {
  */
 export const GET: APIRoute = async ({ request }) => {
     try {
+        console.log('[API] GET /api/partners - Listing partners');
+
         const url = new URL(request.url);
         const useSummary = url.searchParams.get('summary') === 'true';
         const fields = parseFieldSelection(url.search) as PartnerField[] | undefined;
@@ -39,12 +41,15 @@ export const GET: APIRoute = async ({ request }) => {
 
         // Get current user
         const currentUser = getUserSession();
+        console.log('[API] Current user:', currentUser ? { email: currentUser.email, role: currentUser.role } : 'null');
 
         // Fetch all partners
         const allPartners = await listPartners();
+        console.log('[API] Total partners in storage:', allPartners.length);
 
         // Filter by role
         const partners = filterPartnersByRole(allPartners, currentUser);
+        console.log('[API] Filtered partners for user:', partners.length);
 
         // Apply field selection or summary
         let optimizedPartners;
@@ -130,7 +135,15 @@ export const GET: APIRoute = async ({ request }) => {
  */
 export const POST: APIRoute = async ({ request }) => {
     try {
+        console.log('[API] POST /api/partners - Starting partner creation');
+
+        // Check authentication
+        const cookieHeader = request.headers.get('cookie');
+        const currentUser = getUserSession(cookieHeader || undefined);
+        console.log('[API] Current user:', currentUser ? { email: currentUser.email, role: currentUser.role } : 'null');
+
         const body = await request.json();
+        console.log('[API] Request body:', body);
 
         // Validate required fields
         const validationError = validatePartnerData(body);

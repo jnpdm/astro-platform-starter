@@ -34,12 +34,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     // Check if route requires authentication
     if (isProtectedRoute(pathname)) {
+        console.log('[Middleware] Protected route:', pathname);
+
         // Get user session from cookies (server-side)
         const cookieHeader = context.request.headers.get('cookie');
         const user: AuthUser | null = getUserSession(cookieHeader || undefined);
 
+        console.log('[Middleware] User session:', user ? { email: user.email, role: user.role } : 'null');
+
         // If not authenticated, handle based on route type
         if (!user) {
+            console.log('[Middleware] No user session, denying access');
             if (isApiRoute) {
                 // Return JSON error for API routes
                 return new Response(
@@ -63,7 +68,11 @@ export const onRequest = defineMiddleware(async (context, next) => {
         }
 
         // Check if user has permission to access this specific route
-        if (!canAccessRoute(user, pathname)) {
+        const hasAccess = canAccessRoute(user, pathname);
+        console.log('[Middleware] Access check:', { pathname, userRole: user.role, hasAccess });
+
+        if (!hasAccess) {
+            console.log('[Middleware] Access denied for user:', user.email);
             if (isApiRoute) {
                 // Return JSON error for API routes
                 return new Response(
