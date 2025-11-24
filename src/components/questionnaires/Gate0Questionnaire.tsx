@@ -11,7 +11,7 @@
  * Requirements: 6.1, 6.2, 6.3, 6.4, 6.5
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import QuestionnaireForm from './QuestionnaireForm';
 import { SignatureCapture } from './SignatureCapture';
 import SectionStatus from './SectionStatus';
@@ -32,6 +32,15 @@ export default function Gate0Questionnaire({
     partnerId,
     mode,
 }: Gate0QuestionnaireProps) {
+    // Debug logging
+    console.log('[Gate0Questionnaire] Component rendering', {
+        hasConfig: !!config,
+        configId: config?.id,
+        partnerId,
+        mode,
+        hasExistingData: !!existingData
+    });
+
     const [showSignature, setShowSignature] = useState(false);
     const [pendingSubmission, setPendingSubmission] = useState<SubmissionData | null>(null);
     const [signature, setSignature] = useState<Signature | null>(null);
@@ -39,6 +48,14 @@ export default function Gate0Questionnaire({
     const [submitError, setSubmitError] = useState<string | null>(null);
     const [submitSuccess, setSubmitSuccess] = useState(false);
     const [calculatedStatuses, setCalculatedStatuses] = useState<Record<string, SectionStatusType>>({});
+
+    // Debug: Log when component mounts
+    useEffect(() => {
+        console.log('[Gate0Questionnaire] Component mounted successfully');
+        return () => {
+            console.log('[Gate0Questionnaire] Component unmounting');
+        };
+    }, []);
 
     /**
      * Calculate section status based on pass/fail criteria
@@ -339,8 +356,8 @@ export default function Gate0Questionnaire({
 
                     {/* Qualification Status */}
                     <div className={`mb-6 p-4 border rounded-md ${qualification.qualifies
-                            ? 'bg-green-50 border-green-200'
-                            : 'bg-red-50 border-red-200'
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
                         }`}>
                         <p className="text-sm font-medium mb-2 ${
                             qualification.qualifies ? 'text-green-900' : 'text-red-900'

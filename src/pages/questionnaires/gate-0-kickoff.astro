@@ -111,13 +111,23 @@ const mode = existingSubmission ? 'view' : 'edit';
         </div>
 
         <script>
+            // Debug: Log when script runs
+            console.log('[Gate0] Script loaded');
+
             // Hide loading indicator and show content when component hydrates
             document.addEventListener('astro:page-load', () => {
+                console.log('[Gate0] astro:page-load event fired');
                 const loadingIndicator = document.getElementById('loading-indicator');
                 const questionnaireContent = document.getElementById('questionnaire-content');
 
+                console.log('[Gate0] Elements found:', {
+                    loadingIndicator: !!loadingIndicator,
+                    questionnaireContent: !!questionnaireContent
+                });
+
                 // Set a timeout to hide loading after a reasonable time
                 setTimeout(() => {
+                    console.log('[Gate0] Hiding loading indicator');
                     if (loadingIndicator) {
                         loadingIndicator.style.display = 'none';
                     }
@@ -125,6 +135,7 @@ const mode = existingSubmission ? 'view' : 'edit';
 
                 // Listen for component errors
                 window.addEventListener('error', (event) => {
+                    console.error('[Gate0] Error caught:', event.error);
                     const errorBoundary = document.getElementById('error-boundary');
                     const questionnaireContainer = document.getElementById('questionnaire-content');
 
@@ -136,6 +147,17 @@ const mode = existingSubmission ? 'view' : 'edit';
                         }
                     }
                 });
+            });
+
+            // Also try DOMContentLoaded as fallback
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('[Gate0] DOMContentLoaded event fired');
+                const loadingIndicator = document.getElementById('loading-indicator');
+                setTimeout(() => {
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'none';
+                    }
+                }, 1500);
             });
         </script>
     </div>
