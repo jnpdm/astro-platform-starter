@@ -88,8 +88,16 @@ export async function getPartner(partnerId: string): Promise<PartnerRecord | nul
  */
 export async function savePartner(partner: PartnerRecord): Promise<void> {
     try {
+        console.log('[Storage] Attempting to save partner:', partner.id);
+        console.log('[Storage] Environment:', {
+            isDev: import.meta.env.DEV,
+            mode: import.meta.env.MODE,
+            prod: import.meta.env.PROD
+        });
+
         await retryOperation(async () => {
             const store = getStore(PARTNERS_STORE);
+            console.log('[Storage] Got store:', PARTNERS_STORE);
 
             // Update the updatedAt timestamp
             const updatedPartner = {
@@ -97,19 +105,25 @@ export async function savePartner(partner: PartnerRecord): Promise<void> {
                 updatedAt: new Date()
             };
 
+            console.log('[Storage] Calling setJSON...');
             await store.setJSON(partner.id, updatedPartner);
+            console.log('[Storage] Successfully saved partner:', partner.id);
         });
     } catch (error) {
+        console.error('[Storage] Error saving partner:', error);
+
         // In development, Netlify Blobs might not be available
         // Just log the partner data instead of throwing error
         if (import.meta.env.DEV) {
-            console.warn('Netlify Blobs not available in development');
-            console.log('Would save partner:', partner);
+            console.warn('[Storage] Netlify Blobs not available in development');
+            console.log('[Storage] Would save partner:', partner);
             return; // Success in dev mode
         }
 
+        // In production, this is a real error
+        console.error('[Storage] Production storage error:', error);
         throw new StorageError(
-            `Failed to save partner ${partner.id}`,
+            `Failed to save partner ${partner.id}: ${error instanceof Error ? error.message : 'Unknown error'}`,
             'SAVE_PARTNER_ERROR',
             error
         );
@@ -123,9 +137,13 @@ export async function savePartner(partner: PartnerRecord): Promise<void> {
  */
 export async function listPartners(): Promise<PartnerRecord[]> {
     try {
+        console.log('[Storage] Listing partners...');
         return await retryOperation(async () => {
             const store = getStore(PARTNERS_STORE);
+            console.log('[Storage] Got store for listing');
+
             const { blobs } = await store.list();
+            console.log('[Storage] Found blobs:', blobs.length);
 
             const partners: PartnerRecord[] = [];
 
@@ -136,13 +154,16 @@ export async function listPartners(): Promise<PartnerRecord[]> {
                 }
             }
 
+            console.log('[Storage] Loaded partners:', partners.length);
             return partners;
         });
     } catch (error) {
+        console.error('[Storage] Error listing partners:', error);
+
         // In development, Netlify Blobs might not be available
         // Return empty array instead of throwing error
         if (import.meta.env.DEV) {
-            console.warn('Netlify Blobs not available in development, returning empty partner list');
+            console.warn('[Storage] Netlify Blobs not available in development, returning empty partner list');
             return [];
         }
 

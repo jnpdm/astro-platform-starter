@@ -63,8 +63,8 @@ const mode = existingSubmission ? 'view' : 'edit';
         </div>
 
         <!-- Questionnaire Component -->
-        <ToastProvider client:only="react">
-            <Gate3Questionnaire client:only="react" config={gate3Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
+        <ToastProvider client:load>
+            <Gate3Questionnaire config={gate3Config} existingData={existingSubmission} partnerId={partnerId} mode={mode} />
         </ToastProvider>
     </div>
 </HubLayout>

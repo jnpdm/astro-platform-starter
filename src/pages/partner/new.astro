@@ -183,6 +183,7 @@ if (!currentUser) {
                 });
 
                 const result = await response.json();
+                console.log('API response:', result);
 
                 if (!response.ok || !result.success) {
                     throw new Error(result.error || 'Failed to create partner');
@@ -190,6 +191,9 @@ if (!currentUser) {
 
                 // Show success message
                 successMessage?.classList.remove('hidden');
+
+                console.log('Partner created successfully:', result.data);
+                console.log('Redirecting to:', `/partner/${result.data.id}`);
 
                 // Redirect to partner details page
                 setTimeout(() => {
