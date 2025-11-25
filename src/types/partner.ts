@@ -7,7 +7,7 @@ export type GateId = 'pre-contract' | 'gate-0' | 'gate-1' | 'gate-2' | 'gate-3' 
 export type GateStatus = 'not-started' | 'in-progress' | 'passed' | 'failed' | 'blocked';
 export type ContractType = 'PPA' | 'Distribution' | 'Sales-Agent' | 'Other';
 export type TierClassification = 'tier-0' | 'tier-1' | 'tier-2';
-export type UserRole = 'PAM' | 'PDM' | 'TPM' | 'PSM' | 'TAM' | 'Admin';
+export type UserRole = 'PAM' | 'PDM' | 'TAM' | 'PSM';
 
 export interface PartnerRecord {
     id: string;
@@ -16,7 +16,6 @@ export interface PartnerRecord {
     // Team Assignments
     pamOwner: string;
     pdmOwner?: string;
-    tpmOwner?: string;
     psmOwner?: string;
     tamOwner?: string;
 

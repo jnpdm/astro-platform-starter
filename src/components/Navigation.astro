@@ -1,14 +1,16 @@
 ---
 // Gate-based navigation menu for the Partner Onboarding Hub
+import { GATE_LABELS } from '../utils/gateLabels';
+
 const currentPath = Astro.url.pathname;
 
 const navItems = [
     { label: 'Dashboard', href: '/', icon: '📊' },
-    { label: 'Pre-Contract', href: '/questionnaires/pre-contract-pdm', icon: '📋' },
-    { label: 'Gate 0', href: '/questionnaires/gate-0-kickoff', icon: '🚀' },
-    { label: 'Gate 1', href: '/questionnaires/gate-1-ready-to-sell', icon: '💼' },
-    { label: 'Gate 2', href: '/questionnaires/gate-2-ready-to-order', icon: '🔧' },
-    { label: 'Gate 3', href: '/questionnaires/gate-3-ready-to-deliver', icon: '✅' },
+    { label: GATE_LABELS['pre-contract'], href: '/questionnaires/pre-contract-pdm', icon: '📋' },
+    { label: GATE_LABELS['gate-0'], href: '/questionnaires/gate-0-kickoff', icon: '🚀' },
+    { label: GATE_LABELS['gate-1'], href: '/questionnaires/gate-1-ready-to-sell', icon: '💼' },
+    { label: GATE_LABELS['gate-2'], href: '/questionnaires/gate-2-ready-to-order', icon: '🔧' },
+    { label: GATE_LABELS['gate-3'], href: '/questionnaires/gate-3-ready-to-deliver', icon: '✅' },
     { label: 'Documentation', href: '/documentation', icon: '📚' },
     { label: 'Reports', href: '/reports', icon: '📈' }
 ];

@@ -23,19 +23,21 @@ import Gate2QuestionnaireWithToast from '../../components/questionnaires/Gate2Qu
 import gate2ConfigData from '../../config/questionnaires/gate-2-ready-to-order.json';
 const gate2Config = gate2ConfigData as any;
 
-// Get partner ID from URL query params (if editing existing submission)
+// Get partner ID and mode from URL query params
 const url = new URL(Astro.request.url);
 const partnerId = url.searchParams.get('partnerId') || 'new';
 const submissionId = url.searchParams.get('submissionId');
+const mode = url.searchParams.get('mode') || 'create';
 
-// Load existing submission if editing
+// Load existing submission if editing or viewing
 let existingSubmission = null;
 if (submissionId) {
     try {
-        const response = await fetch(`${url.origin}/api/submission/${submissionId}`);
-        if (response.ok) {
-            const result = await response.json();
-            existingSubmission = result.data;
+        const { getSubmission } = await import('../../utils/storage');
+        existingSubmission = await getSubmission(submissionId);
+
+        if (!existingSubmission) {
+            console.error('Submission not found:', submissionId);
         }
     } catch (error) {
         console.error('Failed to load existing submission:', error);
@@ -44,8 +46,12 @@ if (submissionId) {
 
 import HubLayout from '../../layouts/HubLayout.astro';
 
-const pageTitle = existingSubmission ? 'View Gate 2: Ready to Order Submission' : 'Gate 2: Ready to Order Questionnaire';
-const mode = existingSubmission ? 'view' : 'edit';
+const pageTitle =
+    mode === 'edit'
+        ? 'Edit Gate 2: Ready to Order Questionnaire'
+        : existingSubmission
+          ? 'View Gate 2: Ready to Order Submission'
+          : 'Gate 2: Ready to Order Questionnaire';
 ---
 
 <HubLayout title={pageTitle} description="Gate 2: Ready to Order Questionnaire">
@@ -54,10 +60,25 @@ const mode = existingSubmission ? 'view' : 'edit';
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
-                    <h1 class="text-4xl font-bold mb-2">Gate 2: Ready to Order</h1>
+                    <h1 class="text-4xl font-bold mb-2">
+                        {mode === 'edit' && <span class="text-blue-400">Editing: </span>}
+                        Gate 2: Ready to Order
+                    </h1>
                     <p class="text-gray-300">Validate technical readiness and order processing capability</p>
+                    {
+                        mode === 'edit' && existingSubmission && (
+                            <div class="mt-2 p-3 bg-blue-900/50 border border-blue-500 text-blue-200 text-sm rounded">
+                                <strong>✏️ Edit Mode:</strong> You are editing an existing questionnaire submission. Changes will update the existing record.
+                            </div>
+                        )
+                    }
                 </div>
-                <a href="/" class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"> ← Back to Dashboard </a>
+                <a
+                    href={partnerId !== 'new' ? `/partner/${partnerId}` : '/'}
+                    class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                >
+                    ← Back to {partnerId !== 'new' ? 'Partner' : 'Dashboard'}
+                </a>
             </div>
         </div>
 

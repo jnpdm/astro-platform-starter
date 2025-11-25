@@ -44,12 +44,7 @@ if (filterTier) {
 
 if (filterTeamMember) {
     filteredPartners = filteredPartners.filter(
-        (p) =>
-            p.pamOwner === filterTeamMember ||
-            p.pdmOwner === filterTeamMember ||
-            p.tpmOwner === filterTeamMember ||
-            p.psmOwner === filterTeamMember ||
-            p.tamOwner === filterTeamMember
+        (p) => p.pamOwner === filterTeamMember || p.pdmOwner === filterTeamMember || p.psmOwner === filterTeamMember || p.tamOwner === filterTeamMember
     );
 }
 
@@ -360,7 +355,6 @@ const allTeamMembers = new Set<string>();
 allPartners.forEach((p) => {
     if (p.pamOwner) allTeamMembers.add(p.pamOwner);
     if (p.pdmOwner) allTeamMembers.add(p.pdmOwner);
-    if (p.tpmOwner) allTeamMembers.add(p.tpmOwner);
     if (p.psmOwner) allTeamMembers.add(p.psmOwner);
     if (p.tamOwner) allTeamMembers.add(p.tamOwner);
 });

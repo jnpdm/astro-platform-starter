@@ -183,3 +183,20 @@ export function getRoleDashboardMessage(role: UserRole): string {
             return 'Viewing your assigned partners';
     }
 }
+
+/**
+ * Check if user can edit a questionnaire submission
+ * PDM (admin) can edit any questionnaire, PAM can edit questionnaires for partners they own
+ */
+export function canEditQuestionnaire(
+    user: AuthUser | null,
+    partner: PartnerRecord
+): boolean {
+    if (!user) return false;
+
+    // PDM (admin) can edit any questionnaire
+    if (user.role === 'PDM') return true;
+
+    // PAM can edit questionnaires for partners they own
+    return partner.pamOwner?.toLowerCase() === user.email.toLowerCase();
+}

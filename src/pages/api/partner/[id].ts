@@ -272,6 +272,14 @@ export const PUT: APIRoute = async ({ params, request }) => {
 };
 
 /**
+ * Validate email format
+ */
+function isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+}
+
+/**
  * Validate partner update data
  */
 function validatePartnerUpdate(data: any): string | null {
@@ -279,24 +287,40 @@ function validatePartnerUpdate(data: any): string | null {
         return 'partnerName must be a string';
     }
 
-    if (data.pamOwner !== undefined && typeof data.pamOwner !== 'string') {
-        return 'pamOwner must be a string';
+    if (data.pamOwner !== undefined) {
+        if (typeof data.pamOwner !== 'string') {
+            return 'pamOwner must be a string';
+        }
+        if (!isValidEmail(data.pamOwner)) {
+            return 'pamOwner must be a valid email address';
+        }
     }
 
-    if (data.pdmOwner !== undefined && data.pdmOwner !== null && typeof data.pdmOwner !== 'string') {
-        return 'pdmOwner must be a string or null';
+    if (data.pdmOwner !== undefined && data.pdmOwner !== null) {
+        if (typeof data.pdmOwner !== 'string') {
+            return 'pdmOwner must be a string or null';
+        }
+        if (data.pdmOwner && !isValidEmail(data.pdmOwner)) {
+            return 'pdmOwner must be a valid email address';
+        }
     }
 
-    if (data.tpmOwner !== undefined && data.tpmOwner !== null && typeof data.tpmOwner !== 'string') {
-        return 'tpmOwner must be a string or null';
+    if (data.psmOwner !== undefined && data.psmOwner !== null) {
+        if (typeof data.psmOwner !== 'string') {
+            return 'psmOwner must be a string or null';
+        }
+        if (data.psmOwner && !isValidEmail(data.psmOwner)) {
+            return 'psmOwner must be a valid email address';
+        }
     }
 
-    if (data.psmOwner !== undefined && data.psmOwner !== null && typeof data.psmOwner !== 'string') {
-        return 'psmOwner must be a string or null';
-    }
-
-    if (data.tamOwner !== undefined && data.tamOwner !== null && typeof data.tamOwner !== 'string') {
-        return 'tamOwner must be a string or null';
+    if (data.tamOwner !== undefined && data.tamOwner !== null) {
+        if (typeof data.tamOwner !== 'string') {
+            return 'tamOwner must be a string or null';
+        }
+        if (data.tamOwner && !isValidEmail(data.tamOwner)) {
+            return 'tamOwner must be a valid email address';
+        }
     }
 
     if (data.contractType !== undefined && !['PPA', 'Distribution', 'Sales-Agent', 'Other'].includes(data.contractType)) {

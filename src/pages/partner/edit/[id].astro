@@ -128,63 +128,51 @@ function formatDateForInput(date: Date | string | undefined): string {
                             <label for="pamOwner" class="block text-sm font-medium mb-2">
                                 PAM Owner <span class="text-red-400">*</span>
                             </label>
-                            <input
-                                type="email"
+                            <select
                                 id="pamOwner"
                                 name="pamOwner"
                                 required
-                                value={partner.pamOwner}
                                 class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                placeholder="pam@example.com"
-                            />
+                            >
+                                <option value="">Loading PAM users...</option>
+                            </select>
+                            <p id="pamOwner-error" class="text-red-400 text-sm mt-1 hidden">Failed to load PAM users</p>
                         </div>
 
                         <div>
                             <label for="pdmOwner" class="block text-sm font-medium mb-2"> PDM Owner </label>
-                            <input
-                                type="email"
+                            <select
                                 id="pdmOwner"
                                 name="pdmOwner"
-                                value={partner.pdmOwner || ''}
                                 class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                placeholder="pdm@example.com"
-                            />
-                        </div>
-
-                        <div>
-                            <label for="tpmOwner" class="block text-sm font-medium mb-2"> TPM Owner </label>
-                            <input
-                                type="email"
-                                id="tpmOwner"
-                                name="tpmOwner"
-                                value={partner.tpmOwner || ''}
-                                class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                placeholder="tpm@example.com"
-                            />
+                            >
+                                <option value="">Loading PDM users...</option>
+                            </select>
+                            <p id="pdmOwner-error" class="text-red-400 text-sm mt-1 hidden">Failed to load PDM users</p>
                         </div>
 
                         <div>
                             <label for="psmOwner" class="block text-sm font-medium mb-2"> PSM Owner </label>
-                            <input
-                                type="email"
+                            <select
                                 id="psmOwner"
                                 name="psmOwner"
-                                value={partner.psmOwner || ''}
                                 class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                placeholder="psm@example.com"
-                            />
+                            >
+                                <option value="">Loading PSM users...</option>
+                            </select>
+                            <p id="psmOwner-error" class="text-red-400 text-sm mt-1 hidden">Failed to load PSM users</p>
                         </div>
 
                         <div>
                             <label for="tamOwner" class="block text-sm font-medium mb-2"> TAM Owner </label>
-                            <input
-                                type="email"
+                            <select
                                 id="tamOwner"
                                 name="tamOwner"
-                                value={partner.tamOwner || ''}
                                 class="w-full px-3 py-2 bg-gray-900 border border-gray-600 rounded focus:outline-none focus:border-blue-500"
-                                placeholder="tam@example.com"
-                            />
+                            >
+                                <option value="">Loading TAM users...</option>
+                            </select>
+                            <p id="tamOwner-error" class="text-red-400 text-sm mt-1 hidden">Failed to load TAM users</p>
                         </div>
                     </div>
                 </div>
@@ -333,12 +321,113 @@ function formatDateForInput(date: Date | string | undefined): string {
         </form>
     </div>
 
-    <script define:vars={{ partnerId: id }}>
+    <script define:vars={{ partnerId: id, currentPartner: partner }}>
         const form = document.getElementById('partner-form');
         const submitBtn = document.getElementById('submit-btn');
         const successMessage = document.getElementById('success-message');
         const errorMessage = document.getElementById('error-message');
         const errorText = document.getElementById('error-text');
+
+        // Role dropdown elements
+        const pamSelect = document.getElementById('pamOwner');
+        const pdmSelect = document.getElementById('pdmOwner');
+        const psmSelect = document.getElementById('psmOwner');
+        const tamSelect = document.getElementById('tamOwner');
+
+        // Error message elements
+        const pamError = document.getElementById('pamOwner-error');
+        const pdmError = document.getElementById('pdmOwner-error');
+        const psmError = document.getElementById('psmOwner-error');
+        const tamError = document.getElementById('tamOwner-error');
+
+        /**
+         * Fetch users by role and populate dropdown
+         */
+        async function loadUsersForRole(role, selectElement, errorElement, currentValue) {
+            try {
+                const response = await fetch(`/api/users?role=${role}`, {
+                    credentials: 'same-origin'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch ${role} users`);
+                }
+
+                const result = await response.json();
+
+                if (!result.success || !result.users) {
+                    throw new Error(`Invalid response for ${role} users`);
+                }
+
+                // Clear loading option
+                selectElement.innerHTML = '';
+
+                // Add empty option for optional fields
+                if (role !== 'PAM') {
+                    const emptyOption = document.createElement('option');
+                    emptyOption.value = '';
+                    emptyOption.textContent = `-- No ${role} assigned --`;
+                    selectElement.appendChild(emptyOption);
+                }
+
+                // Add user options
+                result.users.forEach((user) => {
+                    const option = document.createElement('option');
+                    option.value = user.email;
+                    option.textContent = `${user.name} (${user.email})`;
+
+                    // Select current value if it matches
+                    if (currentValue && user.email.toLowerCase() === currentValue.toLowerCase()) {
+                        option.selected = true;
+                    }
+
+                    selectElement.appendChild(option);
+                });
+
+                // If no users found, show message
+                if (result.users.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = `No ${role} users available`;
+                    selectElement.appendChild(option);
+                }
+
+                console.log(`Loaded ${result.users.length} ${role} users`);
+            } catch (error) {
+                console.error(`Error loading ${role} users:`, error);
+
+                // Show error message
+                if (errorElement) {
+                    errorElement.classList.remove('hidden');
+                }
+
+                // Add error option
+                selectElement.innerHTML = '';
+                const errorOption = document.createElement('option');
+                errorOption.value = '';
+                errorOption.textContent = `Error loading ${role} users`;
+                selectElement.appendChild(errorOption);
+
+                // For required fields (PAM), add current value as fallback
+                if (role === 'PAM' && currentValue) {
+                    const fallbackOption = document.createElement('option');
+                    fallbackOption.value = currentValue;
+                    fallbackOption.textContent = currentValue;
+                    fallbackOption.selected = true;
+                    selectElement.appendChild(fallbackOption);
+                }
+            }
+        }
+
+        // Load users for all roles on page load
+        (async function initializeDropdowns() {
+            await Promise.all([
+                loadUsersForRole('PAM', pamSelect, pamError, currentPartner.pamOwner),
+                loadUsersForRole('PDM', pdmSelect, pdmError, currentPartner.pdmOwner),
+                loadUsersForRole('PSM', psmSelect, psmError, currentPartner.psmOwner),
+                loadUsersForRole('TAM', tamSelect, tamError, currentPartner.tamOwner)
+            ]);
+        })();
 
         form?.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -354,21 +443,27 @@ function formatDateForInput(date: Date | string | undefined): string {
             try {
                 // Get form data
                 const formData = new FormData(form);
+
+                // Helper to get value or null for empty strings
+                const getValueOrNull = (key) => {
+                    const value = formData.get(key);
+                    return value && value.trim() !== '' ? value : null;
+                };
+
                 const data = {
                     partnerName: formData.get('partnerName'),
                     tier: formData.get('tier'),
                     pamOwner: formData.get('pamOwner'),
-                    pdmOwner: formData.get('pdmOwner') || null,
-                    tpmOwner: formData.get('tpmOwner') || null,
-                    psmOwner: formData.get('psmOwner') || null,
-                    tamOwner: formData.get('tamOwner') || null,
+                    pdmOwner: getValueOrNull('pdmOwner'),
+                    psmOwner: getValueOrNull('psmOwner'),
+                    tamOwner: getValueOrNull('tamOwner'),
                     contractType: formData.get('contractType'),
-                    contractSignedDate: formData.get('contractSignedDate') || null,
+                    contractSignedDate: getValueOrNull('contractSignedDate'),
                     ccv: parseFloat(formData.get('ccv')),
                     lrp: parseFloat(formData.get('lrp')),
-                    onboardingStartDate: formData.get('onboardingStartDate') || null,
-                    targetLaunchDate: formData.get('targetLaunchDate') || null,
-                    actualLaunchDate: formData.get('actualLaunchDate') || null,
+                    onboardingStartDate: getValueOrNull('onboardingStartDate'),
+                    targetLaunchDate: getValueOrNull('targetLaunchDate'),
+                    actualLaunchDate: getValueOrNull('actualLaunchDate'),
                     currentGate: formData.get('currentGate')
                 };
 

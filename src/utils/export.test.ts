@@ -49,7 +49,6 @@ describe('exportPartnersToCSV', () => {
             partnerName: 'Full Team Partner',
             pamOwner: 'PAM User',
             pdmOwner: 'PDM User',
-            tpmOwner: 'TPM User',
             psmOwner: 'PSM User',
             tamOwner: 'TAM User',
             contractType: 'Distribution',
@@ -67,7 +66,6 @@ describe('exportPartnersToCSV', () => {
 
         expect(lines[1]).toContain('PAM User');
         expect(lines[1]).toContain('PDM User');
-        expect(lines[1]).toContain('TPM User');
         expect(lines[1]).toContain('PSM User');
         expect(lines[1]).toContain('TAM User');
     });

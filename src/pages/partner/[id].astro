@@ -12,7 +12,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import { getPartner, listSubmissionsByPartner } from '../../utils/storage';
-import { canAccessPartner, canEditPartner } from '../../utils/rbac';
+import { canAccessPartner, canEditPartner, canEditQuestionnaire } from '../../utils/rbac';
 import { getUserSession } from '../../middleware/auth';
 import type { PartnerRecord, GateId } from '../../types/partner';
 import type { QuestionnaireSubmission } from '../../types/submission';
@@ -54,6 +54,9 @@ try {
 
 // Check if user can edit this partner
 const canEdit = partner ? canEditPartner(currentUser, partner) : false;
+
+// Check if user can edit questionnaires for this partner
+const canEditQuest = partner ? canEditQuestionnaire(currentUser, partner) : false;
 
 // Gate order for timeline display
 const gateOrder: GateId[] = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
@@ -118,6 +121,11 @@ const submissionsByQuestionnaire = submissions.reduce(
     },
     {} as Record<string, QuestionnaireSubmission[]>
 );
+
+// Helper function to generate edit URL for a questionnaire submission
+function getEditUrl(questionnaireId: string, submissionId: string, partnerId: string): string {
+    return `/questionnaires/${questionnaireId}?partnerId=${partnerId}&submissionId=${submissionId}&mode=edit`;
+}
 ---
 
 <Layout title={partner ? `${partner.partnerName} - Partner Details` : 'Partner Details'}>
@@ -175,12 +183,6 @@ const submissionsByQuestionnaire = submissions.reduce(
                                             <div class="flex justify-between">
                                                 <span class="text-gray-400">PDM Owner:</span>
                                                 <span class="font-medium">{partner.pdmOwner}</span>
-                                            </div>
-                                        )}
-                                        {partner.tpmOwner && (
-                                            <div class="flex justify-between">
-                                                <span class="text-gray-400">TPM Owner:</span>
-                                                <span class="font-medium">{partner.tpmOwner}</span>
                                             </div>
                                         )}
                                         {partner.psmOwner && (
@@ -446,22 +448,51 @@ const submissionsByQuestionnaire = submissions.reduce(
                                     {submissions
                                         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                                         .slice(0, 5)
-                                        .map((submission) => (
-                                            <div class="bg-gray-900/50 rounded p-3">
-                                                <div class="flex items-start justify-between mb-1">
-                                                    <div class="text-sm font-medium">{submission.questionnaireId}</div>
-                                                    <span class={`px-2 py-0.5 rounded text-xs font-medium ${submission.overallStatus === 'pass' ? 'bg-green-600' : submission.overallStatus === 'fail' ? 'bg-red-600' : 'bg-yellow-600'}`}>
-                                                        {submission.overallStatus.toUpperCase()}
-                                                    </span>
+                                        .map((submission) => {
+                                            const editUrl = getEditUrl(submission.questionnaireId, submission.id, partner!.id);
+                                            const wasEdited = submission.updatedAt && submission.createdAt && 
+                                                new Date(submission.updatedAt).getTime() > new Date(submission.createdAt).getTime();
+                                            
+                                            return (
+                                                <div class="bg-gray-900/50 rounded p-3">
+                                                    <div class="flex items-start justify-between mb-1">
+                                                        <div class="flex items-center gap-2">
+                                                            <div class="text-sm font-medium">{submission.questionnaireId}</div>
+                                                            {wasEdited && (
+                                                                <span class="px-2 py-0.5 bg-blue-600 text-white rounded text-xs font-medium">
+                                                                    Edited
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                        <div class="flex items-center gap-2">
+                                                            <span class={`px-2 py-0.5 rounded text-xs font-medium ${submission.overallStatus === 'pass' ? 'bg-green-600' : submission.overallStatus === 'fail' ? 'bg-red-600' : 'bg-yellow-600'}`}>
+                                                                {submission.overallStatus.toUpperCase()}
+                                                            </span>
+                                                            {canEditQuest && (
+                                                                <a
+                                                                    href={editUrl}
+                                                                    class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors"
+                                                                    title="Edit this questionnaire"
+                                                                >
+                                                                    Edit
+                                                                </a>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div class="text-xs text-gray-400">
+                                                        Submitted: {formatDate(submission.submittedAt || submission.createdAt)}
+                                                    </div>
+                                                    {wasEdited && (
+                                                        <div class="text-xs text-gray-400">
+                                                            Last updated: {formatDate(submission.updatedAt)}
+                                                        </div>
+                                                    )}
+                                                    <div class="text-xs text-gray-500 mt-1">
+                                                        By: {submission.submittedBy} ({submission.submittedByRole})
+                                                    </div>
                                                 </div>
-                                                <div class="text-xs text-gray-400">
-                                                    {formatDate(submission.submittedAt || submission.createdAt)}
-                                                </div>
-                                                <div class="text-xs text-gray-500 mt-1">
-                                                    By: {submission.submittedBy} ({submission.submittedByRole})
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     {submissions.length > 5 && (
                                         <div class="text-xs text-gray-400 text-center pt-2">
                                             +{submissions.length - 5} more submissions

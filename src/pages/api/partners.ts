@@ -172,7 +172,6 @@ export const POST: APIRoute = async ({ request }) => {
             partnerName: body.partnerName,
             pamOwner: body.pamOwner,
             pdmOwner: body.pdmOwner,
-            tpmOwner: body.tpmOwner,
             psmOwner: body.psmOwner,
             tamOwner: body.tamOwner,
             contractSignedDate: body.contractSignedDate ? new Date(body.contractSignedDate) : undefined,

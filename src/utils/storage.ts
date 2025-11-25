@@ -6,6 +6,7 @@
 import { getStore } from '@netlify/blobs';
 import type { PartnerRecord } from '../types/partner';
 import type { QuestionnaireSubmission } from '../types/submission';
+import { migrateLegacyPartner } from './partnerMigration';
 
 // Store names
 const PARTNERS_STORE = 'partners';
@@ -63,8 +64,9 @@ export async function getPartner(partnerId: string): Promise<PartnerRecord | nul
                 return null;
             }
 
-            // Convert date strings back to Date objects
-            return deserializePartner(data as any);
+            // Convert date strings back to Date objects and migrate legacy fields
+            const deserialized = deserializePartner(data as any);
+            return migrateLegacyPartner(deserialized);
         });
     } catch (error) {
         console.error('[Storage] Error getting partner:', error);
@@ -152,7 +154,9 @@ export async function listPartners(): Promise<PartnerRecord[]> {
             for (const blob of blobs) {
                 const data = await store.get(blob.key, { type: 'json' });
                 if (data) {
-                    partners.push(deserializePartner(data as any));
+                    const deserialized = deserializePartner(data as any);
+                    const migrated = migrateLegacyPartner(deserialized);
+                    partners.push(migrated);
                 }
             }
 

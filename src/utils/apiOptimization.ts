@@ -20,7 +20,6 @@ export type PartnerField =
     | 'partnerName'
     | 'pamOwner'
     | 'pdmOwner'
-    | 'tpmOwner'
     | 'psmOwner'
     | 'tamOwner'
     | 'contractSignedDate'
