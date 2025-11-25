@@ -24,7 +24,7 @@ interface Gate1QuestionnaireProps {
     config: QuestionnaireConfig;
     existingData?: any;
     partnerId: string;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
 }
 
 export default function Gate1Questionnaire({

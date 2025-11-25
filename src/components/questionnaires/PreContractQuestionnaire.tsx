@@ -22,7 +22,7 @@ interface PreContractQuestionnaireProps {
     config: QuestionnaireConfig;
     existingData?: any;
     partnerId: string;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
 }
 
 export default function PreContractQuestionnaire({

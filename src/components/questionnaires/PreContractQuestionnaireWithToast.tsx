@@ -10,7 +10,7 @@ interface PreContractQuestionnaireWithToastProps {
     config: QuestionnaireConfig;
     existingData?: any;
     partnerId: string;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
 }
 
 export default function PreContractQuestionnaireWithToast(props: PreContractQuestionnaireWithToastProps) {

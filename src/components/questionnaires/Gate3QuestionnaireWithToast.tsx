@@ -10,7 +10,7 @@ interface Gate3QuestionnaireWithToastProps {
     config: QuestionnaireConfig;
     existingData?: any;
     partnerId: string;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
 }
 
 export default function Gate3QuestionnaireWithToast(props: Gate3QuestionnaireWithToastProps) {

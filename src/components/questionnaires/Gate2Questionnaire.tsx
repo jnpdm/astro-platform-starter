@@ -24,7 +24,7 @@ interface Gate2QuestionnaireProps {
     config: QuestionnaireConfig;
     existingData?: any;
     partnerId: string;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
 }
 
 export default function Gate2Questionnaire({

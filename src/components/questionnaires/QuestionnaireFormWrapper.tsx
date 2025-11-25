@@ -17,7 +17,7 @@ const QuestionnaireForm = lazy(() => import('./QuestionnaireForm'));
 interface QuestionnaireFormWrapperProps {
     config: QuestionnaireConfig;
     existingData?: SubmissionData;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
     onSubmit: (data: SubmissionData) => Promise<void>;
     partnerId?: string;
 }

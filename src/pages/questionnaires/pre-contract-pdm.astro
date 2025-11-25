@@ -1,43 +1,26 @@
 ---
 /**
  * Pre-Contract PDM Engagement Questionnaire Page
- *
- * This page implements the Pre-Contract PDM Engagement questionnaire which validates
- * qualification criteria for PDM support before contract signature.
- *
- * Features:
- * - Five sections: Executive Sponsorship, Commercial Framework, Technical Feasibility, Timeline, Strategic Classification
- * - Section status calculation based on responses
- * - Signature capture before submission
- * - CCV threshold validation (10% of Country LRP)
- *
- * Requirements: 4.1, 4.2, 4.3, 4.4, 4.5, 4.6, 4.7
  */
 
 export const prerender = false;
 
 import PreContractQuestionnaireWithToast from '../../components/questionnaires/PreContractQuestionnaireWithToast';
+import HubLayout from '../../layouts/HubLayout.astro';
 
-// Load the pre-contract PDM questionnaire config
-import preContractConfigData from '../../config/questionnaires/pre-contract-pdm.json';
-const preContractConfig = preContractConfigData as any;
+import configData from '../../config/questionnaires/pre-contract-pdm.json';
+const config = configData as any;
 
-// Debug: Log config to verify it's loaded
-console.log('Pre-contract config loaded:', preContractConfig?.id);
-
-// Get partner ID and mode from URL query params
 const url = new URL(Astro.request.url);
 const partnerId = url.searchParams.get('partnerId') || 'new';
 const submissionId = url.searchParams.get('submissionId');
 const mode = url.searchParams.get('mode') || 'create';
 
-// Load existing submission if editing or viewing
 let existingSubmission = null;
 if (submissionId) {
     try {
         const { getSubmission } = await import('../../utils/storage');
         existingSubmission = await getSubmission(submissionId);
-
         if (!existingSubmission) {
             console.error('Submission not found:', submissionId);
         }
@@ -46,47 +29,31 @@ if (submissionId) {
     }
 }
 
-import HubLayout from '../../layouts/HubLayout.astro';
-
-const pageTitle =
-    mode === 'edit'
-        ? 'Edit Pre-Contract PDM Engagement Questionnaire'
-        : existingSubmission
-          ? 'View Pre-Contract PDM Engagement Submission'
-          : 'Pre-Contract PDM Engagement Questionnaire';
+const pageTitle = mode === 'edit' ? 'Edit Pre-Contract PDM Engagement Questionnaire' : existingSubmission ? 'View Pre-Contract PDM Engagement Submission' : 'Pre-Contract PDM Engagement Questionnaire';
 ---
 
 <HubLayout title={pageTitle} description="Pre-Contract PDM Engagement Questionnaire">
     <div class="py-8">
-        <!-- Page Header -->
         <div class="mb-6">
             <div class="flex items-center justify-between mb-4">
                 <div>
                     <h1 class="text-4xl font-bold mb-2">
-                        {mode === 'edit' && <span class="text-blue-400">Editing: </span>}
-                        Pre-Contract PDM Engagement
+                        {mode === 'edit' && <span class="text-blue-400">Editing: </span>}Pre-Contract PDM Engagement
                     </h1>
                     <p class="text-gray-300">Validate partner readiness before contract execution</p>
-                    {
-                        mode === 'edit' && existingSubmission && (
-                            <div class="mt-2 p-3 bg-blue-900/50 border border-blue-500 text-blue-200 text-sm rounded">
-                                <strong>✏️ Edit Mode:</strong> You are editing an existing questionnaire submission. Changes will update the existing record.
-                            </div>
-                        )
-                    }
+                    {mode === 'edit' && existingSubmission && (
+                        <div class="mt-2 p-3 bg-blue-900/50 border border-blue-500 text-blue-200 text-sm rounded">
+                            <strong>✏️ Edit Mode:</strong> You are editing an existing questionnaire submission.
+                        </div>
+                    )}
                 </div>
-                <a
-                    href={partnerId !== 'new' ? `/partner/${partnerId}` : '/'}
-                    class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"
-                >
-                    ← Back to {partnerId !== 'new' ? 'Partner' : 'Dashboard'}
+                <a href={partnerId !== 'new' ? `/partner/${partnerId}` : '/'} class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors">
+                    {partnerId !== 'new' ? 'Back to Partner' : 'Back to Dashboard'}
                 </a>
             </div>
         </div>
 
-        <!-- Questionnaire Component -->
         <div id="questionnaire-container">
-            <!-- Loading State -->
             <div id="loading-indicator" class="flex items-center justify-center py-12">
                 <div class="text-center">
                     <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4"></div>
@@ -94,29 +61,19 @@ const pageTitle =
                 </div>
             </div>
 
-            <!-- Error Boundary -->
             <div id="error-boundary" class="hidden">
                 <div class="max-w-2xl mx-auto">
                     <div class="bg-red-50 border border-red-200 rounded-lg p-8">
                         <div class="flex items-start">
                             <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                                ></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
                             <div class="flex-1">
                                 <h3 class="text-lg font-medium text-red-900 mb-2">Failed to Load Questionnaire</h3>
-                                <p class="text-sm text-red-700 mb-4">
-                                    We encountered an error while loading the questionnaire component. This may be due to a network issue or a problem with the
-                                    page configuration.
-                                </p>
+                                <p class="text-sm text-red-700 mb-4">We encountered an error loading the questionnaire.</p>
                                 <div class="flex gap-3">
-                                    <button
-                                        onclick="window.location.reload()"
-                                        class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                    >
-                                        Retry
-                                    </button>
-                                    <a href="/" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"> Back to Dashboard </a>
+                                    <button onclick="window.location.reload()" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">Retry</button>
+                                    <a href="/" class="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300">Back to Dashboard</a>
                                 </div>
                             </div>
                         </div>
@@ -124,42 +81,24 @@ const pageTitle =
                 </div>
             </div>
 
-            <!-- Questionnaire Component with Toast context -->
             <div id="questionnaire-content">
-                <PreContractQuestionnaireWithToast
-                    client:only="react"
-                    config={preContractConfig}
-                    existingData={existingSubmission}
-                    partnerId={partnerId}
-                    mode={mode}
-                />
+                <PreContractQuestionnaireWithToast client:only="react" config={config} existingData={existingSubmission} partnerId={partnerId} mode={mode === 'edit' || mode === 'view' ? mode : undefined} />
             </div>
         </div>
 
         <script>
-            // Hide loading indicator and show content when component hydrates
             document.addEventListener('astro:page-load', () => {
                 const loadingIndicator = document.getElementById('loading-indicator');
-                const questionnaireContent = document.getElementById('questionnaire-content');
-
-                // Set a timeout to hide loading after a reasonable time
                 setTimeout(() => {
-                    if (loadingIndicator) {
-                        loadingIndicator.style.display = 'none';
-                    }
+                    if (loadingIndicator) loadingIndicator.style.display = 'none';
                 }, 1000);
-
-                // Listen for component errors
-                window.addEventListener('error', (event) => {
+                window.addEventListener('error', () => {
                     const errorBoundary = document.getElementById('error-boundary');
                     const questionnaireContainer = document.getElementById('questionnaire-content');
-
                     if (errorBoundary && questionnaireContainer) {
                         errorBoundary.classList.remove('hidden');
                         questionnaireContainer.style.display = 'none';
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
+                        if (loadingIndicator) loadingIndicator.style.display = 'none';
                     }
                 });
             });

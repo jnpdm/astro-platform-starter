@@ -6,7 +6,7 @@ import { useToast } from '../../contexts/ToastContext';
 interface QuestionnaireFormProps {
     config: QuestionnaireConfig;
     existingData?: SubmissionData;
-    mode: 'edit' | 'view';
+    mode?: 'edit' | 'view';
     onSubmit: (data: SubmissionData) => Promise<void>;
     partnerId?: string;
 }
