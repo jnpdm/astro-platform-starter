@@ -1,8 +1,10 @@
 ---
 // Gate-based navigation menu for the Partner Onboarding Hub
 import { GATE_LABELS } from '../utils/gateLabels';
+import { getUserSession } from '../middleware/auth';
 
 const currentPath = Astro.url.pathname;
+const currentUser = getUserSession();
 
 const navItems = [
     { label: 'Dashboard', href: '/', icon: '📊' },
@@ -14,6 +16,11 @@ const navItems = [
     { label: 'Documentation', href: '/documentation', icon: '📚' },
     { label: 'Reports', href: '/reports', icon: '📈' }
 ];
+
+// Add admin navigation items for PDM users
+if (currentUser?.role === 'PDM') {
+    navItems.push({ label: 'Manage Templates', href: '/admin/templates', icon: '⚙️' });
+}
 
 const isActive = (href: string) => {
     if (href === '/') {

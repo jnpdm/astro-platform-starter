@@ -11,6 +11,7 @@ interface PreContractQuestionnaireWithToastProps {
     existingData?: any;
     partnerId: string;
     mode?: 'edit' | 'view';
+    templateVersion?: number;
 }
 
 export default function PreContractQuestionnaireWithToast(props: PreContractQuestionnaireWithToastProps) {

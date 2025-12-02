@@ -1,0 +1,168 @@
+---
+/**
+ * Template Preview Page
+ * Renders a questionnaire template as users will see it
+ * Uses the same rendering logic as actual questionnaires
+ */
+
+export const prerender = false;
+
+import HubLayout from '../../../../layouts/HubLayout.astro';
+import { getUserSession } from '../../../../middleware/auth';
+import { getCurrentTemplate } from '../../../../utils/templateStorage';
+import { templateToConfig } from '../../../../utils/templateToConfig';
+import QuestionnaireFormWrapper from '../../../../components/questionnaires/QuestionnaireFormWrapper';
+import type { QuestionnaireTemplate } from '../../../../types/template';
+
+// Get current user from session
+const currentUser = getUserSession();
+
+// Restrict access to PDM role only
+if (!currentUser || currentUser.role !== 'PDM') {
+    return Astro.redirect('/?error=access_denied');
+}
+
+// Get template ID from URL
+const { templateId } = Astro.params;
+
+if (!templateId) {
+    return Astro.redirect('/admin/templates?error=missing_template_id');
+}
+
+// Load current template data
+let template: QuestionnaireTemplate | null = null;
+let error: string | null = null;
+let config: any = null;
+
+try {
+    template = await getCurrentTemplate(templateId);
+    
+    if (!template) {
+        error = `Template "${templateId}" not found. It may not have been created yet.`;
+        console.warn('[TemplatePreview] Template not found:', templateId);
+    } else {
+        // Convert template to config format for rendering
+        config = templateToConfig(template);
+        console.log('[TemplatePreview] Loaded template:', templateId, 'with', template.fields.length, 'fields');
+    }
+} catch (e) {
+    console.error('[TemplatePreview] Failed to load template:', e);
+    error = 'Failed to load template. Please try again later.';
+}
+
+// Define template display names
+const templateNames: Record<string, string> = {
+    'pre-contract': 'Pre-Contract: PDM Engagement',
+    'gate-0': 'Gate 0: Onboarding Kickoff',
+    'gate-1': 'Gate 1: Ready to Sell',
+    'gate-2': 'Gate 2: Ready to Order',
+    'gate-3': 'Gate 3: Ready to Deliver',
+    'post-launch': 'Post-Launch'
+};
+
+const templateName = templateNames[templateId] || templateId;
+---
+
+<HubLayout title={`Preview: ${templateName}`}>
+    <div class="py-8">
+        <!-- Header -->
+        <div class="mb-6">
+            <div class="flex items-center gap-3 mb-2">
+                <a 
+                    href={`/admin/templates/${templateId}/edit`}
+                    class="text-gray-400 hover:text-white transition-colors"
+                    title="Back to Editor"
+                >
+                    ← Back to Editor
+                </a>
+                <span class="text-gray-600">/</span>
+                <h1 class="text-4xl font-bold">Template Preview</h1>
+            </div>
+            <p class="text-gray-300">{templateName}</p>
+        </div>
+
+        <!-- Preview Notice -->
+        <div class="mb-6 p-4 bg-blue-900/50 border border-blue-500 rounded-lg">
+            <div class="flex items-start gap-3">
+                <span class="text-2xl">👁️</span>
+                <div>
+                    <p class="font-semibold text-blue-200 mb-1">Preview Mode</p>
+                    <p class="text-sm text-blue-300">
+                        This is how the questionnaire will appear to users. All fields are read-only in preview mode.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        {error && (
+            <div class="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded mb-6">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <div>
+                        <p class="font-semibold mb-1">Error Loading Template</p>
+                        <p class="text-sm">{error}</p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {template && config && (
+            <div class="space-y-6">
+                <!-- Template Info -->
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Template ID</div>
+                            <div class="font-mono text-sm text-white">{template.id}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Current Version</div>
+                            <div class="font-semibold text-white">v{template.version}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Total Fields</div>
+                            <div class="font-semibold text-white">{template.fields.filter(f => !f.removed).length}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Questionnaire Preview -->
+                <div class="bg-gray-900/30 border border-gray-700 rounded-lg p-6">
+                    <QuestionnaireFormWrapper
+                        client:only="react"
+                        config={config}
+                        mode="view"
+                        onSubmit={async () => {
+                            // No-op in preview mode
+                            console.log('[TemplatePreview] Submit called (no-op in preview)');
+                        }}
+                    />
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex justify-between items-center pt-6 border-t border-gray-700">
+                    <a 
+                        href={`/admin/templates/${templateId}/edit`}
+                        class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors font-medium"
+                    >
+                        ← Back to Editor
+                    </a>
+                    <a 
+                        href="/admin/templates"
+                        class="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors font-medium"
+                    >
+                        All Templates
+                    </a>
+                </div>
+            </div>
+        )}
+
+        {!template && !error && (
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-12 text-center">
+                <div class="text-6xl mb-4">⏳</div>
+                <p class="text-gray-400">Loading template preview...</p>
+            </div>
+        )}
+    </div>
+</HubLayout>
+

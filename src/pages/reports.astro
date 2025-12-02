@@ -5,6 +5,7 @@ import Layout from '../layouts/Layout.astro';
 import { listPartners, listSubmissionsByPartner } from '../utils/storage';
 import { filterPartnersByRole } from '../utils/rbac';
 import { getUserSession } from '../middleware/auth';
+import { calculateReportData, calculateGateMetrics } from '../utils/reportCalculations';
 import type { PartnerRecord, GateId, TierClassification } from '../types/partner';
 import type { QuestionnaireSubmission } from '../types/submission';
 import gatesConfig from '../config/gates.json';
@@ -67,21 +68,20 @@ if (filterDateTo) {
 // Use filtered partners for calculations
 const partners = filteredPartners;
 
+// Calculate report data using utility functions
+const reportData = calculateReportData(partners);
+const totalPartners = reportData.totalPartners;
+
 // Gate order for calculations
 const gateOrder: GateId[] = ['pre-contract', 'gate-0', 'gate-1', 'gate-2', 'gate-3', 'post-launch'];
 
-// Calculate summary statistics
-const totalPartners = partners.length;
-
-// Partners by gate
-const partnersByGate = gateOrder.map((gateId) => {
-    const count = partners.filter((p) => p.currentGate === gateId).length;
-    const gateInfo = gatesConfig.gates.find((g) => g.id === gateId);
+// Partners by gate (using calculated metrics)
+const partnersByGate = reportData.gateMetrics.map((metric) => {
     return {
-        gateId,
-        name: gateInfo?.name || gateId,
-        count,
-        percentage: totalPartners > 0 ? Math.round((count / totalPartners) * 100) : 0
+        gateId: metric.gateId,
+        name: metric.gateName,
+        count: metric.partnerCount,
+        percentage: totalPartners > 0 ? Math.round((metric.partnerCount / totalPartners) * 100) : 0
     };
 });
 

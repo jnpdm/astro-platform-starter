@@ -11,6 +11,7 @@ interface Gate3QuestionnaireWithToastProps {
     existingData?: any;
     partnerId: string;
     mode?: 'edit' | 'view';
+    templateVersion?: number;
 }
 
 export default function Gate3QuestionnaireWithToast(props: Gate3QuestionnaireWithToastProps) {

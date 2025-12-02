@@ -298,15 +298,16 @@ export default function QuestionnaireForm({
         const value = formData[sectionId]?.[field.id] ?? '';
         const error = validationErrors[sectionId]?.[field.id];
         const fieldId = `${sectionId}-${field.id}`;
+        const isRemoved = (field as any).removed === true;
 
         const commonProps = {
             id: fieldId,
             name: field.id,
-            disabled: isViewMode,
+            disabled: isViewMode || isRemoved,
             'aria-describedby': field.helpText ? `${fieldId}-help` : undefined,
             'aria-invalid': error ? true : undefined,
             className: `w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${error ? 'border-red-500' : 'border-gray-300'
-                } ${isViewMode ? 'bg-gray-50' : ''}`,
+                } ${isViewMode || isRemoved ? 'bg-gray-50' : ''}`,
         };
 
         const handleChange = (newValue: any) => {
@@ -314,11 +315,21 @@ export default function QuestionnaireForm({
         };
 
         return (
-            <div key={field.id} className="mb-6">
+            <div key={field.id} className={`mb-6 ${isRemoved ? 'opacity-75' : ''}`}>
                 <label htmlFor={fieldId} className="block text-sm font-medium text-gray-700 mb-1">
                     {field.label}
-                    {field.required && <span className="text-red-500 ml-1">*</span>}
+                    {field.required && !isRemoved && <span className="text-red-500 ml-1">*</span>}
+                    {isRemoved && (
+                        <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            Removed from template
+                        </span>
+                    )}
                 </label>
+                {isRemoved && (
+                    <p className="text-xs text-yellow-700 mb-2">
+                        This field was removed from the template but is shown here for historical reference.
+                    </p>
+                )}
 
                 {field.type === 'text' && (
                     <input

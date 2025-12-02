@@ -51,3 +51,13 @@ export type {
     Signature,
     SignatureMetadata,
 } from './signature';
+
+// Template types
+export type {
+    FieldType as TemplateFieldType,
+    QuestionField,
+    QuestionnaireTemplate,
+    TemplateVersion,
+    TemplateMetadata,
+    ValidationResult,
+} from './template';

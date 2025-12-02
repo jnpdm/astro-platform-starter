@@ -103,6 +103,54 @@ const errorParam = Astro.url.searchParams.get('error');
                 </div>
             </div>
 
+            <!-- PDM Utilization Section (only visible for PDM users) -->
+            <div id="pdm-utilization-section" class="hidden mb-8">
+                <div class="bg-gradient-to-r from-blue-900/50 to-purple-900/50 border border-blue-700 rounded-lg p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-2xl font-bold">My Utilization</h2>
+                        <div class="flex gap-2">
+                            <button id="mode-revenue" class="px-4 py-2 rounded-lg text-sm font-medium bg-blue-600 text-white"> Revenue </button>
+                            <button id="mode-count" class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-700 text-gray-300 hover:bg-gray-600">
+                                Partner Count
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div>
+                            <div class="text-gray-400 text-sm font-medium mb-1">Current Value</div>
+                            <div id="utilization-current" class="text-3xl font-bold text-blue-400">$0</div>
+                        </div>
+
+                        <div>
+                            <div class="text-gray-400 text-sm font-medium mb-1">Capacity Target</div>
+                            <div id="utilization-target" class="text-3xl font-bold text-gray-300">$0</div>
+                        </div>
+
+                        <div>
+                            <div class="text-gray-400 text-sm font-medium mb-1">Utilization</div>
+                            <div id="utilization-percentage" class="text-3xl font-bold text-green-400">0%</div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mt-4">
+                        <div class="w-full bg-gray-700 rounded-full h-3 overflow-hidden">
+                            <div
+                                id="utilization-progress-bar"
+                                class="h-full bg-gradient-to-r from-blue-500 to-green-500 transition-all duration-500"
+                                style="width: 0%"
+                            >
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-sm text-gray-400">
+                        <span id="utilization-partner-count">0 partners</span> assigned to you
+                    </div>
+                </div>
+            </div>
+
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <!-- Partners by Gate Section -->
                 <div class="lg:col-span-2">
@@ -157,6 +205,11 @@ const errorParam = Astro.url.searchParams.get('error');
             'post-launch': 'Post-Launch'
         };
 
+        // PDM Utilization state
+        let currentUtilizationMode = 'revenue';
+        const REVENUE_TARGET = 10000000; // $10M default
+        const PARTNER_COUNT_TARGET = 10; // 10 partners default
+
         // Client-side data loading
         async function loadDashboardData() {
             const loadingState = document.getElementById('loading-state');
@@ -198,6 +251,9 @@ const errorParam = Astro.url.searchParams.get('error');
 
                 // Render dashboard with partner data
                 renderDashboard(partners);
+
+                // Render PDM utilization if user is PDM
+                renderPDMUtilization(partners);
             } catch (error) {
                 console.error('Error loading dashboard:', error);
 
@@ -393,6 +449,139 @@ const errorParam = Astro.url.searchParams.get('error');
             if (!date) return 'Not set';
             const d = typeof date === 'string' ? new Date(date) : date;
             return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+        }
+
+        function renderPDMUtilization(partners) {
+            // Get current user info from the page
+            const userRoleElement = document.querySelector('.bg-blue-900\\/30');
+            if (!userRoleElement) return;
+
+            const userRoleText = userRoleElement.textContent || '';
+            const isPDM = userRoleText.includes('PDM:');
+
+            if (!isPDM) return;
+
+            // Extract PDM email from the role text or use a default
+            // In a real implementation, this would come from the session
+            const pdmEmail = extractEmailFromSession();
+            if (!pdmEmail) return;
+
+            // Show the utilization section
+            const utilizationSection = document.getElementById('pdm-utilization-section');
+            if (utilizationSection) {
+                utilizationSection.classList.remove('hidden');
+            }
+
+            // Calculate and display utilization
+            updateUtilizationDisplay(partners, pdmEmail);
+
+            // Set up mode toggle buttons
+            const revenueButton = document.getElementById('mode-revenue');
+            const countButton = document.getElementById('mode-count');
+
+            revenueButton?.addEventListener('click', () => {
+                currentUtilizationMode = 'revenue';
+                updateModeButtons();
+                updateUtilizationDisplay(partners, pdmEmail);
+            });
+
+            countButton?.addEventListener('click', () => {
+                currentUtilizationMode = 'partner-count';
+                updateModeButtons();
+                updateUtilizationDisplay(partners, pdmEmail);
+            });
+        }
+
+        function extractEmailFromSession() {
+            // Try to get email from window.kuiperAuth if available
+            if (window.kuiperAuth && window.kuiperAuth.user) {
+                return window.kuiperAuth.user.email;
+            }
+            return null;
+        }
+
+        function updateModeButtons() {
+            const revenueButton = document.getElementById('mode-revenue');
+            const countButton = document.getElementById('mode-count');
+
+            if (currentUtilizationMode === 'revenue') {
+                revenueButton?.classList.add('bg-blue-600', 'text-white');
+                revenueButton?.classList.remove('bg-gray-700', 'text-gray-300');
+                countButton?.classList.remove('bg-blue-600', 'text-white');
+                countButton?.classList.add('bg-gray-700', 'text-gray-300');
+            } else {
+                countButton?.classList.add('bg-blue-600', 'text-white');
+                countButton?.classList.remove('bg-gray-700', 'text-gray-300');
+                revenueButton?.classList.remove('bg-blue-600', 'text-white');
+                revenueButton?.classList.add('bg-gray-700', 'text-gray-300');
+            }
+        }
+
+        function updateUtilizationDisplay(partners, pdmEmail) {
+            // Filter partners assigned to this PDM
+            const pdmPartners = partners.filter((p) => p.pdmOwner?.toLowerCase() === pdmEmail.toLowerCase());
+
+            let currentValue, capacityTarget, formattedCurrent, formattedTarget;
+
+            if (currentUtilizationMode === 'revenue') {
+                // Sum CCV
+                currentValue = pdmPartners.reduce((sum, p) => sum + (p.ccv || 0), 0);
+                capacityTarget = REVENUE_TARGET;
+                formattedCurrent = formatCurrency(currentValue);
+                formattedTarget = formatCurrency(capacityTarget);
+            } else {
+                // Count partners
+                currentValue = pdmPartners.length;
+                capacityTarget = PARTNER_COUNT_TARGET;
+                formattedCurrent = currentValue.toString();
+                formattedTarget = capacityTarget.toString();
+            }
+
+            // Calculate percentage
+            const utilizationPercentage = capacityTarget > 0 ? (currentValue / capacityTarget) * 100 : 0;
+
+            // Update display
+            const currentEl = document.getElementById('utilization-current');
+            const targetEl = document.getElementById('utilization-target');
+            const percentageEl = document.getElementById('utilization-percentage');
+            const progressBar = document.getElementById('utilization-progress-bar');
+            const partnerCountEl = document.getElementById('utilization-partner-count');
+
+            if (currentEl) currentEl.textContent = formattedCurrent;
+            if (targetEl) targetEl.textContent = formattedTarget;
+            if (percentageEl) {
+                percentageEl.textContent = `${Math.round(utilizationPercentage)}%`;
+
+                // Color code based on utilization
+                percentageEl.classList.remove('text-green-400', 'text-yellow-400', 'text-red-400');
+                if (utilizationPercentage >= 90) {
+                    percentageEl.classList.add('text-red-400');
+                } else if (utilizationPercentage >= 70) {
+                    percentageEl.classList.add('text-yellow-400');
+                } else {
+                    percentageEl.classList.add('text-green-400');
+                }
+            }
+
+            if (progressBar) {
+                const cappedPercentage = Math.min(utilizationPercentage, 100);
+                progressBar.style.width = `${cappedPercentage}%`;
+            }
+
+            if (partnerCountEl) {
+                const count = pdmPartners.length;
+                partnerCountEl.textContent = `${count} ${count === 1 ? 'partner' : 'partners'}`;
+            }
+        }
+
+        function formatCurrency(value) {
+            if (value >= 1000000) {
+                return `$${(value / 1000000).toFixed(1)}M`;
+            } else if (value >= 1000) {
+                return `$${(value / 1000).toFixed(0)}K`;
+            } else {
+                return `$${value.toFixed(0)}`;
+            }
         }
 
         // Retry button handler

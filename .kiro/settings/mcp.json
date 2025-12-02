@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "builder-mcp": {
+      "autoApprove": [
+        "ReadInternalWebsites",
+        "InternalSearch",
+        "BrazilBuildAnalyzerTool"
+      ],
+      "disabled": false,
+      "timeout": 60,
+      "type": "stdio",
+      "command": "/Users/jnusser/.toolbox/bin/builder-mcp",
+      "env": {}
+    }
+  }
+}

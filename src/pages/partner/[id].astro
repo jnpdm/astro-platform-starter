@@ -14,6 +14,7 @@ import Layout from '../../layouts/Layout.astro';
 import { getPartner, listSubmissionsByPartner } from '../../utils/storage';
 import { canAccessPartner, canEditPartner, canEditQuestionnaire } from '../../utils/rbac';
 import { getUserSession } from '../../middleware/auth';
+import { GATE_LABELS } from '../../utils/gateLabels';
 import type { PartnerRecord, GateId } from '../../types/partner';
 import type { QuestionnaireSubmission } from '../../types/submission';
 import gatesConfig from '../../config/gates.json';
@@ -429,25 +430,39 @@ function getEditUrl(questionnaireId: string, submissionId: string, partnerId: st
                                         Edit Partner
                                     </a>
                                 )}
-                                <a
-                                    href="/questionnaires/pre-contract-pdm"
-                                    class="block w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white text-center rounded transition-colors"
-                                >
-                                    New Questionnaire
-                                </a>
+                                {(() => {
+                                    // Get current gate info
+                                    const currentGateInfo = gatesConfig.gates.find(g => g.id === partner.currentGate);
+                                    const hasQuestionnaires = currentGateInfo?.questionnaires && currentGateInfo.questionnaires.length > 0;
+                                    
+                                    if (hasQuestionnaires && currentGateInfo) {
+                                        // Use the first questionnaire for the current gate
+                                        const questionnaireId = currentGateInfo.questionnaires[0];
+                                        const gateLabel = GATE_LABELS[partner.currentGate];
+                                        
+                                        return (
+                                            <a
+                                                href={`/questionnaires/${questionnaireId}?partnerId=${partner.id}`}
+                                                class="block w-full px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-center rounded transition-colors"
+                                            >
+                                                Add {gateLabel} Questionnaire
+                                            </a>
+                                        );
+                                    }
+                                    return null;
+                                })()}
                             </div>
                         </section>
 
-                        <!-- Submission History -->
+                        <!-- Completed Questionnaires -->
                         <section class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
-                            <h3 class="text-lg font-bold mb-4">Submission History</h3>
+                            <h3 class="text-lg font-bold mb-4">Completed Questionnaires</h3>
                             {submissions.length === 0 ? (
-                                <p class="text-gray-400 text-sm">No submissions yet</p>
+                                <p class="text-gray-400 text-sm">No questionnaires completed yet</p>
                             ) : (
                                 <div class="space-y-3">
                                     {submissions
                                         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                                        .slice(0, 5)
                                         .map((submission) => {
                                             const editUrl = getEditUrl(submission.questionnaireId, submission.id, partner!.id);
                                             const wasEdited = submission.updatedAt && submission.createdAt && 
@@ -493,11 +508,6 @@ function getEditUrl(questionnaireId: string, submissionId: string, partnerId: st
                                                 </div>
                                             );
                                         })}
-                                    {submissions.length > 5 && (
-                                        <div class="text-xs text-gray-400 text-center pt-2">
-                                            +{submissions.length - 5} more submissions
-                                        </div>
-                                    )}
                                 </div>
                             )}
                         </section>

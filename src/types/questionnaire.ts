@@ -47,6 +47,7 @@ export interface Field {
     helpText?: string;
     placeholder?: string;
     defaultValue?: any;
+    removed?: boolean; // Flag for historical fields that have been removed from template
 }
 
 export interface ValidationRule {

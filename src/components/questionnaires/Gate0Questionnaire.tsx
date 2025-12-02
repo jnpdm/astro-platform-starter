@@ -24,6 +24,7 @@ interface Gate0QuestionnaireProps {
     existingData?: any;
     partnerId: string;
     mode?: 'edit' | 'view';
+    templateVersion?: number;
 }
 
 export default function Gate0Questionnaire({
@@ -31,6 +32,7 @@ export default function Gate0Questionnaire({
     existingData,
     partnerId,
     mode,
+    templateVersion,
 }: Gate0QuestionnaireProps) {
     // Debug logging
     console.log('[Gate0Questionnaire] Component rendering', {
@@ -239,6 +241,7 @@ export default function Gate0Questionnaire({
                 submittedBy: sig.signerEmail,
                 submittedByRole: 'PDM', // Default to PDM for Gate 0
                 submittedAt: new Date().toISOString(),
+                templateVersion: templateVersion, // Store template version with submission
                 metadata: {
                     qualification: qualification,
                 },
@@ -264,9 +267,13 @@ export default function Gate0Questionnaire({
             setSubmitSuccess(true);
             setShowSignature(false);
 
-            // Redirect to success page or dashboard after a delay
+            // Redirect back to partner page if partnerId is provided, otherwise to dashboard
             setTimeout(() => {
-                window.location.href = `/?success=true&submissionId=${result.data.id}`;
+                if (partnerId && partnerId !== 'new') {
+                    window.location.href = `/partner/${partnerId}?success=true&submissionId=${result.data.id}`;
+                } else {
+                    window.location.href = `/?success=true&submissionId=${result.data.id}`;
+                }
             }, 2000);
         } catch (error) {
             console.error('Submission error:', error);

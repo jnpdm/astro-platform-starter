@@ -1,15 +1,15 @@
 ---
 /**
  * Gate 1: Ready to Sell Questionnaire Page
+ * Now uses dynamic templates from template storage
  */
 
 export const prerender = false;
 
 import Gate1QuestionnaireWithToast from '../../components/questionnaires/Gate1QuestionnaireWithToast';
 import HubLayout from '../../layouts/HubLayout.astro';
-
-import configData from '../../config/questionnaires/gate-1-ready-to-sell.json';
-const config = configData as any;
+import { getTemplateForSubmission } from '../../utils/templateStorage';
+import { templateToConfig } from '../../utils/templateToConfig';
 
 const url = new URL(Astro.request.url);
 const partnerId = url.searchParams.get('partnerId') || 'new';
@@ -17,19 +17,53 @@ const submissionId = url.searchParams.get('submissionId');
 const mode = url.searchParams.get('mode') || 'create';
 
 let existingSubmission = null;
+let templateVersion: number | undefined;
+
 if (submissionId) {
     try {
         const { getSubmission } = await import('../../utils/storage');
         existingSubmission = await getSubmission(submissionId);
         if (!existingSubmission) {
             console.error('Submission not found:', submissionId);
+        } else {
+            templateVersion = existingSubmission.templateVersion;
         }
     } catch (error) {
         console.error('Failed to load existing submission:', error);
     }
 }
 
-const pageTitle = mode === 'edit' ? 'Edit Gate 1: Ready to Sell Questionnaire' : existingSubmission ? 'View Gate 1: Ready to Sell Submission' : 'Gate 1: Ready to Sell Questionnaire';
+// Load template (current or historical version)
+let config: any;
+let currentTemplateVersion: number | undefined;
+
+try {
+    const template = await getTemplateForSubmission('gate-1', templateVersion);
+    if (template) {
+        // Include removed fields when viewing/editing historical submissions
+        const includeRemovedFields = !!existingSubmission;
+        config = templateToConfig(template, includeRemovedFields);
+        currentTemplateVersion = template.version;
+        console.log('[Gate1] Loaded template version:', currentTemplateVersion, 'includeRemovedFields:', includeRemovedFields);
+    } else {
+        // Fallback to JSON config if template not found
+        console.warn('[Gate1] Template not found, falling back to JSON config');
+        const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
+        config = configData.default;
+    }
+} catch (error) {
+    console.error('[Gate1] Error loading template:', error);
+    // Fallback to JSON config
+    const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
+    config = configData.default;
+}
+
+const pageTitle =
+    mode === 'edit'
+        ? 'Edit Gate 1: Ready to Sell Questionnaire'
+        : existingSubmission
+          ? 'View Gate 1: Ready to Sell Submission'
+          : 'Gate 1: Ready to Sell Questionnaire';
 ---
 
 <HubLayout title={pageTitle} description="Gate 1: Ready to Sell Questionnaire">
@@ -41,13 +75,18 @@ const pageTitle = mode === 'edit' ? 'Edit Gate 1: Ready to Sell Questionnaire' :
                         {mode === 'edit' && <span class="text-blue-400">Editing: </span>}Gate 1: Ready to Sell
                     </h1>
                     <p class="text-gray-300">Validate completion of onboarding kickoff, GTM strategy, and training</p>
-                    {mode === 'edit' && existingSubmission && (
-                        <div class="mt-2 p-3 bg-blue-900/50 border border-blue-500 text-blue-200 text-sm rounded">
-                            <strong>✏️ Edit Mode:</strong> You are editing an existing questionnaire submission.
-                        </div>
-                    )}
+                    {
+                        mode === 'edit' && existingSubmission && (
+                            <div class="mt-2 p-3 bg-blue-900/50 border border-blue-500 text-blue-200 text-sm rounded">
+                                <strong>✏️ Edit Mode:</strong> You are editing an existing questionnaire submission.
+                            </div>
+                        )
+                    }
                 </div>
-                <a href={partnerId !== 'new' ? `/partner/${partnerId}` : '/'} class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors">
+                <a
+                    href={partnerId !== 'new' ? `/partner/${partnerId}` : '/'}
+                    class="px-4 py-2 text-sm font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors"
+                >
                     {partnerId !== 'new' ? 'Back to Partner' : 'Back to Dashboard'}
                 </a>
             </div>
@@ -66,7 +105,8 @@ const pageTitle = mode === 'edit' ? 'Edit Gate 1: Ready to Sell Questionnaire' :
                     <div class="bg-red-50 border border-red-200 rounded-lg p-8">
                         <div class="flex items-start">
                             <svg class="w-6 h-6 text-red-600 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                ></path>
                             </svg>
                             <div class="flex-1">
                                 <h3 class="text-lg font-medium text-red-900 mb-2">Failed to Load Questionnaire</h3>
@@ -81,24 +121,76 @@ const pageTitle = mode === 'edit' ? 'Edit Gate 1: Ready to Sell Questionnaire' :
                 </div>
             </div>
 
-            <div id="questionnaire-content">
-                <Gate1QuestionnaireWithToast client:only="react" config={config} existingData={existingSubmission} partnerId={partnerId} mode={mode === 'edit' || mode === 'view' ? mode : undefined} />
+            <div id="questionnaire-content" style="display: none;">
+                <Gate1QuestionnaireWithToast
+                    client:only="react"
+                    config={config}
+                    existingData={existingSubmission}
+                    partnerId={partnerId}
+                    mode={mode === 'edit' || mode === 'view' ? mode : undefined}
+                    templateVersion={currentTemplateVersion}
+                />
             </div>
         </div>
 
         <script>
-            document.addEventListener('astro:page-load', () => {
+            // Hide loading indicator once React component mounts
+            function hideLoadingIndicator() {
                 const loadingIndicator = document.getElementById('loading-indicator');
-                setTimeout(() => {
-                    if (loadingIndicator) loadingIndicator.style.display = 'none';
-                }, 1000);
+                const questionnaireContent = document.getElementById('questionnaire-content');
+
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                if (questionnaireContent) {
+                    questionnaireContent.style.display = 'block';
+                }
+            }
+
+            // Check for React component mounting
+            function checkForComponent() {
+                const container = document.getElementById('questionnaire-content');
+                if (container && container.querySelector('form, [role="form"], .questionnaire-form')) {
+                    hideLoadingIndicator();
+                    return true;
+                }
+                return false;
+            }
+
+            // Try multiple strategies to detect when component is ready
+            document.addEventListener('astro:page-load', () => {
+                // Strategy 1: Check immediately
+                if (checkForComponent()) return;
+
+                // Strategy 2: Use MutationObserver to watch for DOM changes
+                const container = document.getElementById('questionnaire-content');
+                if (container) {
+                    const observer = new MutationObserver(() => {
+                        if (checkForComponent()) {
+                            observer.disconnect();
+                        }
+                    });
+                    observer.observe(container, { childList: true, subtree: true });
+
+                    // Strategy 3: Fallback timeout after 3 seconds
+                    setTimeout(() => {
+                        observer.disconnect();
+                        hideLoadingIndicator();
+                    }, 3000);
+                }
+
+                // Error handling
                 window.addEventListener('error', () => {
                     const errorBoundary = document.getElementById('error-boundary');
                     const questionnaireContainer = document.getElementById('questionnaire-content');
+                    const loadingIndicator = document.getElementById('loading-indicator');
+
                     if (errorBoundary && questionnaireContainer) {
                         errorBoundary.classList.remove('hidden');
                         questionnaireContainer.style.display = 'none';
-                        if (loadingIndicator) loadingIndicator.style.display = 'none';
+                        if (loadingIndicator) {
+                            loadingIndicator.style.display = 'none';
+                        }
                     }
                 });
             });

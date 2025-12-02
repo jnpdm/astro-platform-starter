@@ -1,0 +1,174 @@
+---
+export const prerender = false;
+
+import HubLayout from '../../../../layouts/HubLayout.astro';
+import { getUserSession } from '../../../../middleware/auth';
+import { getCurrentTemplate } from '../../../../utils/templateStorage';
+import TemplateEditorWrapper from '../../../../components/templates/TemplateEditorWrapper';
+import type { QuestionnaireTemplate } from '../../../../types/template';
+
+// Get current user from session
+const currentUser = getUserSession();
+
+// Restrict access to PDM role only
+if (!currentUser || currentUser.role !== 'PDM') {
+    return Astro.redirect('/?error=access_denied');
+}
+
+// Get template ID from URL
+const { templateId } = Astro.params;
+
+if (!templateId) {
+    return Astro.redirect('/admin/templates?error=missing_template_id');
+}
+
+// Load current template data
+let template: QuestionnaireTemplate | null = null;
+let error: string | null = null;
+
+try {
+    template = await getCurrentTemplate(templateId);
+    
+    if (!template) {
+        error = `Template "${templateId}" not found. It may not have been created yet.`;
+        console.warn('[TemplateEditor] Template not found:', templateId);
+    } else {
+        console.log('[TemplateEditor] Loaded template:', templateId, 'with', template.fields.length, 'fields');
+    }
+} catch (e) {
+    console.error('[TemplateEditor] Failed to load template:', e);
+    error = 'Failed to load template. Please try again later.';
+}
+
+// Define template display names
+const templateNames: Record<string, string> = {
+    'pre-contract': 'Pre-Contract: PDM Engagement',
+    'gate-0': 'Gate 0: Onboarding Kickoff',
+    'gate-1': 'Gate 1: Ready to Sell',
+    'gate-2': 'Gate 2: Ready to Order',
+    'gate-3': 'Gate 3: Ready to Deliver',
+    'post-launch': 'Post-Launch'
+};
+
+const templateName = templateNames[templateId] || templateId;
+---
+
+<HubLayout title={`Edit Template: ${templateName}`}>
+    <div class="py-8">
+        <!-- Header -->
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <a 
+                        href="/admin/templates" 
+                        class="text-gray-400 hover:text-white transition-colors"
+                        title="Back to Templates"
+                    >
+                        ← Templates
+                    </a>
+                    <span class="text-gray-600">/</span>
+                    <h1 class="text-4xl font-bold">Edit Template</h1>
+                </div>
+                <p class="text-gray-300">{templateName}</p>
+            </div>
+            <div class="flex items-center gap-3">
+                <a 
+                    href={`/admin/templates/${templateId}/preview`}
+                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"
+                >
+                    👁️ Preview
+                </a>
+                <a 
+                    href="/admin/templates" 
+                    class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg transition-colors text-sm font-medium"
+                >
+                    Cancel
+                </a>
+            </div>
+        </div>
+
+        {error && (
+            <div class="bg-red-900/50 border border-red-600 text-red-200 px-4 py-3 rounded mb-6">
+                <div class="flex items-start gap-3">
+                    <span class="text-xl">⚠️</span>
+                    <div>
+                        <p class="font-semibold mb-1">Error Loading Template</p>
+                        <p class="text-sm">{error}</p>
+                    </div>
+                </div>
+            </div>
+        )}
+
+        {template && (
+            <div class="space-y-6">
+                <!-- Template Info -->
+                <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Template ID</div>
+                            <div class="font-mono text-sm text-white">{template.id}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Current Version</div>
+                            <div class="font-semibold text-white">v{template.version}</div>
+                        </div>
+                        <div>
+                            <div class="text-sm text-gray-400 mb-1">Total Fields</div>
+                            <div class="font-semibold text-white">{template.fields.length}</div>
+                        </div>
+                    </div>
+                    {template.updatedAt && (
+                        <div class="mt-4 pt-4 border-t border-gray-700">
+                            <div class="text-sm text-gray-400">
+                                Last updated {new Date(template.updatedAt).toLocaleString('en-US', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                })}
+                                {template.updatedBy && ` by ${template.updatedBy}`}
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <!-- Template Editor Component -->
+                <TemplateEditorWrapper
+                    client:only="react"
+                    template={template}
+                    onSave={async (updatedTemplate) => {
+                        // This will be handled by the API endpoint
+                        const response = await fetch(`/api/templates/${templateId}`, {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                fields: updatedTemplate.fields,
+                                updatedBy: currentUser.email,
+                            }),
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Failed to save template');
+                        }
+
+                        // Redirect back to template list on success
+                        window.location.href = '/admin/templates?success=template_saved';
+                    }}
+                    onCancel={() => {
+                        window.location.href = '/admin/templates';
+                    }}
+                />
+            </div>
+        )}
+
+        {!template && !error && (
+            <div class="bg-gray-800/50 border border-gray-700 rounded-lg p-12 text-center">
+                <div class="text-6xl mb-4">⏳</div>
+                <p class="text-gray-400">Loading template...</p>
+            </div>
+        )}
+    </div>
+</HubLayout>

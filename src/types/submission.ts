@@ -25,6 +25,9 @@ export interface QuestionnaireSubmission {
     // Signature
     signature: Signature;
 
+    // Template Version (for historical rendering)
+    templateVersion?: number; // Version of template used for this submission
+
     // Metadata
     createdAt: Date;
     updatedAt: Date;

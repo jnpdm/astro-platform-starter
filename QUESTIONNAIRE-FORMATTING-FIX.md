@@ -66,12 +66,26 @@ class="..."
 <!-- Inconsistent indentation in JSX -->
 ```
 
+## Additional Fixes
+
+### Loading Indicator Issue
+The questionnaire pages had an ever-present spinning loading indicator because the script was using a simple timeout that didn't properly wait for React component hydration.
+
+**Solution**: Implemented a multi-strategy approach:
+1. **MutationObserver**: Watches for DOM changes to detect when the React component mounts
+2. **Immediate check**: Tries to detect the component right away
+3. **Fallback timeout**: Ensures the loading indicator is hidden after 3 seconds maximum
+4. **Initial hidden state**: The questionnaire content starts hidden and is revealed when ready
+
+This ensures the loading indicator disappears as soon as the React component is ready, providing a better user experience.
+
 ## Build Verification
 After the fix:
 - ✅ Build completes successfully
-- ✅ All 444 tests pass
+- ✅ All tests pass
 - ✅ No TypeScript errors
 - ✅ Formatting tests pass
+- ✅ Loading indicator works correctly
 
 ## Future Maintenance
 1. Always run `npm run build` before committing changes to questionnaire pages

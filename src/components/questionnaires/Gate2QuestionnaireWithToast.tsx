@@ -11,6 +11,7 @@ interface Gate2QuestionnaireWithToastProps {
     existingData?: any;
     partnerId: string;
     mode?: 'edit' | 'view';
+    templateVersion?: number;
 }
 
 export default function Gate2QuestionnaireWithToast(props: Gate2QuestionnaireWithToastProps) {

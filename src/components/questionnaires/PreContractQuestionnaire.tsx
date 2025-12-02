@@ -23,6 +23,7 @@ interface PreContractQuestionnaireProps {
     existingData?: any;
     partnerId: string;
     mode?: 'edit' | 'view';
+    templateVersion?: number;
 }
 
 export default function PreContractQuestionnaire({
@@ -30,6 +31,7 @@ export default function PreContractQuestionnaire({
     existingData,
     partnerId,
     mode,
+    templateVersion,
 }: PreContractQuestionnaireProps) {
     const [showSignature, setShowSignature] = useState(false);
     const [pendingSubmission, setPendingSubmission] = useState<SubmissionData | null>(null);
@@ -193,6 +195,7 @@ export default function PreContractQuestionnaire({
                 submittedBy: sig.signerEmail,
                 submittedByRole: 'PAM', // Default to PAM for pre-contract
                 submittedAt: new Date().toISOString(),
+                templateVersion: templateVersion, // Store template version with submission
             };
 
             // Submit to API
@@ -215,9 +218,13 @@ export default function PreContractQuestionnaire({
             setSubmitSuccess(true);
             setShowSignature(false);
 
-            // Redirect to success page or dashboard after a delay
+            // Redirect back to partner page if partnerId is provided, otherwise to dashboard
             setTimeout(() => {
-                window.location.href = `/?success=true&submissionId=${result.data.id}`;
+                if (partnerId && partnerId !== 'new') {
+                    window.location.href = `/partner/${partnerId}?success=true&submissionId=${result.data.id}`;
+                } else {
+                    window.location.href = `/?success=true&submissionId=${result.data.id}`;
+                }
             }, 2000);
         } catch (error) {
             console.error('Submission error:', error);
