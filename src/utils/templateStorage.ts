@@ -63,6 +63,12 @@ async function retryOperation<T>(
  * @throws TemplateStorageError if retrieval fails
  */
 export async function getCurrentTemplate(templateId: string): Promise<QuestionnaireTemplate | null> {
+    // In development mode without Netlify Blobs, return null immediately
+    if (import.meta.env.DEV && !import.meta.env.VITEST) {
+        console.warn(`[TemplateStorage] Development mode: skipping Netlify Blobs, template ${templateId} not available`);
+        return null;
+    }
+
     try {
         return await retryOperation(async () => {
             const store = getStore(TEMPLATES_STORE);
@@ -77,11 +83,6 @@ export async function getCurrentTemplate(templateId: string): Promise<Questionna
         });
     } catch (error) {
         console.error('[TemplateStorage] Error getting current template:', error);
-
-        if (import.meta.env.DEV && !import.meta.env.VITEST) {
-            console.warn(`Netlify Blobs not available in development, template ${templateId} not found`);
-            return null;
-        }
 
         throw new TemplateStorageError(
             `Failed to retrieve template ${templateId}`,
@@ -102,6 +103,12 @@ export async function getTemplateVersion(
     templateId: string,
     version: number
 ): Promise<TemplateVersion | null> {
+    // In development mode without Netlify Blobs, return null immediately
+    if (import.meta.env.DEV && !import.meta.env.VITEST) {
+        console.warn(`[TemplateStorage] Development mode: skipping Netlify Blobs, template ${templateId} version ${version} not available`);
+        return null;
+    }
+
     try {
         return await retryOperation(async () => {
             const store = getStore(TEMPLATES_STORE);
@@ -116,11 +123,6 @@ export async function getTemplateVersion(
         });
     } catch (error) {
         console.error('[TemplateStorage] Error getting template version:', error);
-
-        if (import.meta.env.DEV && !import.meta.env.VITEST) {
-            console.warn(`Netlify Blobs not available in development, template ${templateId} version ${version} not found`);
-            return null;
-        }
 
         throw new TemplateStorageError(
             `Failed to retrieve template ${templateId} version ${version}`,
@@ -219,6 +221,12 @@ export async function saveTemplate(
  * @throws TemplateStorageError if listing fails
  */
 export async function listTemplates(): Promise<QuestionnaireTemplate[]> {
+    // In development mode without Netlify Blobs, return empty list immediately
+    if (import.meta.env.DEV && !import.meta.env.VITEST) {
+        console.warn('[TemplateStorage] Development mode: skipping Netlify Blobs, returning empty template list');
+        return [];
+    }
+
     try {
         console.log('[TemplateStorage] Listing templates...');
 
@@ -241,11 +249,6 @@ export async function listTemplates(): Promise<QuestionnaireTemplate[]> {
     } catch (error) {
         console.error('[TemplateStorage] Error listing templates:', error);
 
-        if (import.meta.env.DEV && !import.meta.env.VITEST) {
-            console.warn('[TemplateStorage] Netlify Blobs not available in development, returning empty list');
-            return [];
-        }
-
         throw new TemplateStorageError(
             'Failed to list templates',
             'LIST_TEMPLATES_ERROR',
@@ -261,6 +264,12 @@ export async function listTemplates(): Promise<QuestionnaireTemplate[]> {
  * @throws TemplateStorageError if listing fails
  */
 export async function listTemplateVersions(templateId: string): Promise<TemplateVersion[]> {
+    // In development mode without Netlify Blobs, return empty list immediately
+    if (import.meta.env.DEV && !import.meta.env.VITEST) {
+        console.warn(`[TemplateStorage] Development mode: skipping Netlify Blobs, returning empty versions for ${templateId}`);
+        return [];
+    }
+
     try {
         return await retryOperation(async () => {
             const store = getStore(TEMPLATES_STORE);
@@ -283,11 +292,6 @@ export async function listTemplateVersions(templateId: string): Promise<Template
         });
     } catch (error) {
         console.error('[TemplateStorage] Error listing template versions:', error);
-
-        if (import.meta.env.DEV && !import.meta.env.VITEST) {
-            console.warn(`Netlify Blobs not available in development, returning empty versions for ${templateId}`);
-            return [];
-        }
 
         throw new TemplateStorageError(
             `Failed to list versions for template ${templateId}`,
