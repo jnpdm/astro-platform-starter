@@ -1,15 +1,13 @@
 ---
 /**
  * Gate 1: Ready to Sell Questionnaire Page
- * Now uses dynamic templates from template storage
  */
 
 export const prerender = false;
 
 import Gate1QuestionnaireWithToast from '../../components/questionnaires/Gate1QuestionnaireWithToast';
 import HubLayout from '../../layouts/HubLayout.astro';
-import { getTemplateForSubmission } from '../../utils/templateStorage';
-import { templateToConfig } from '../../utils/templateToConfig';
+import gate1Config from '../../config/questionnaires/gate-1-ready-to-sell.json';
 
 const url = new URL(Astro.request.url);
 const partnerId = url.searchParams.get('partnerId') || 'new';
@@ -17,7 +15,6 @@ const submissionId = url.searchParams.get('submissionId');
 const mode = url.searchParams.get('mode') || 'create';
 
 let existingSubmission = null;
-let templateVersion: number | undefined;
 
 if (submissionId) {
     try {
@@ -25,39 +22,10 @@ if (submissionId) {
         existingSubmission = await getSubmission(submissionId);
         if (!existingSubmission) {
             console.error('Submission not found:', submissionId);
-        } else {
-            templateVersion = existingSubmission.templateVersion;
         }
     } catch (error) {
         console.error('Failed to load existing submission:', error);
     }
-}
-
-// Load template (current or historical version)
-let config: any;
-let currentTemplateVersion: number | undefined;
-
-try {
-    const template = await getTemplateForSubmission('gate-1', templateVersion);
-    if (template) {
-        // Include removed fields when viewing/editing historical submissions
-        const includeRemovedFields = !!existingSubmission;
-        config = templateToConfig(template, includeRemovedFields);
-        currentTemplateVersion = template.version;
-        console.log('[Gate1] Loaded template version:', currentTemplateVersion, 'includeRemovedFields:', includeRemovedFields);
-    } else {
-        // Fallback to JSON config if template not found
-        console.warn('[Gate1] Template not found, falling back to JSON config');
-        const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
-        config = configData.default;
-        currentTemplateVersion = undefined;
-    }
-} catch (error) {
-    console.error('[Gate1] Error loading template:', error);
-    // Fallback to JSON config
-    const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
-    config = configData.default;
-    currentTemplateVersion = undefined;
 }
 
 const pageTitle =
@@ -126,11 +94,10 @@ const pageTitle =
             <div id="questionnaire-content" style="display: none;">
                 <Gate1QuestionnaireWithToast
                     client:only="react"
-                    config={config}
+                    config={gate1Config}
                     existingData={existingSubmission}
                     partnerId={partnerId}
                     mode={mode === 'edit' || mode === 'view' ? mode : undefined}
-                    templateVersion={currentTemplateVersion}
                 />
             </div>
         </div>

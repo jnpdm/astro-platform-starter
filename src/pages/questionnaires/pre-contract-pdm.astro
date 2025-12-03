@@ -1,15 +1,13 @@
 ---
 /**
  * Pre-Contract PDM Engagement Questionnaire Page
- * Now uses dynamic templates from template storage
  */
 
 export const prerender = false;
 
 import PreContractQuestionnaireWithToast from '../../components/questionnaires/PreContractQuestionnaireWithToast';
 import HubLayout from '../../layouts/HubLayout.astro';
-import { getTemplateForSubmission } from '../../utils/templateStorage';
-import { templateToConfig } from '../../utils/templateToConfig';
+import preContractConfig from '../../config/questionnaires/pre-contract-pdm.json';
 
 const url = new URL(Astro.request.url);
 const partnerId = url.searchParams.get('partnerId') || 'new';
@@ -17,7 +15,6 @@ const submissionId = url.searchParams.get('submissionId');
 const mode = url.searchParams.get('mode') || 'create';
 
 let existingSubmission = null;
-let templateVersion: number | undefined;
 
 if (submissionId) {
     try {
@@ -25,39 +22,10 @@ if (submissionId) {
         existingSubmission = await getSubmission(submissionId);
         if (!existingSubmission) {
             console.error('Submission not found:', submissionId);
-        } else {
-            templateVersion = existingSubmission.templateVersion;
         }
     } catch (error) {
         console.error('Failed to load existing submission:', error);
     }
-}
-
-// Load template (current or historical version)
-let config: any;
-let currentTemplateVersion: number | undefined;
-
-try {
-    const template = await getTemplateForSubmission('pre-contract', templateVersion);
-    if (template) {
-        // Include removed fields when viewing/editing historical submissions
-        const includeRemovedFields = !!existingSubmission;
-        config = templateToConfig(template, includeRemovedFields);
-        currentTemplateVersion = template.version;
-        console.log('[PreContract] Loaded template version:', currentTemplateVersion, 'includeRemovedFields:', includeRemovedFields);
-    } else {
-        // Fallback to JSON config if template not found
-        console.warn('[PreContract] Template not found, falling back to JSON config');
-        const configData = await import('../../config/questionnaires/pre-contract-pdm.json');
-        config = configData.default;
-        currentTemplateVersion = undefined;
-    }
-} catch (error) {
-    console.error('[PreContract] Error loading template:', error);
-    // Fallback to JSON config
-    const configData = await import('../../config/questionnaires/pre-contract-pdm.json');
-    config = configData.default;
-    currentTemplateVersion = undefined;
 }
 
 const pageTitle =
@@ -126,11 +94,10 @@ const pageTitle =
             <div id="questionnaire-content" style="display: none;">
                 <PreContractQuestionnaireWithToast
                     client:only="react"
-                    config={config}
+                    config={preContractConfig}
                     existingData={existingSubmission}
                     partnerId={partnerId}
                     mode={mode === 'edit' || mode === 'view' ? mode : undefined}
-                    templateVersion={currentTemplateVersion}
                 />
             </div>
         </div>
