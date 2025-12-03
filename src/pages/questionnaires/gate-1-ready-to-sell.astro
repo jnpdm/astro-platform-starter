@@ -50,12 +50,14 @@ try {
         console.warn('[Gate1] Template not found, falling back to JSON config');
         const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
         config = configData.default;
+        currentTemplateVersion = undefined;
     }
 } catch (error) {
     console.error('[Gate1] Error loading template:', error);
     // Fallback to JSON config
     const configData = await import('../../config/questionnaires/gate-1-ready-to-sell.json');
     config = configData.default;
+    currentTemplateVersion = undefined;
 }
 
 const pageTitle =
