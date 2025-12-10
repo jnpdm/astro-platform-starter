@@ -103,65 +103,19 @@ const pageTitle =
         </div>
 
         <script>
-            // Hide loading indicator once React component mounts
-            function hideLoadingIndicator() {
-                const loadingIndicator = document.getElementById('loading-indicator');
-                const questionnaireContent = document.getElementById('questionnaire-content');
-
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-                if (questionnaireContent) {
-                    questionnaireContent.style.display = 'block';
-                }
-            }
-
-            // Check for React component mounting
-            function checkForComponent() {
-                const container = document.getElementById('questionnaire-content');
-                if (container && container.querySelector('form, [role="form"], .questionnaire-form')) {
-                    hideLoadingIndicator();
-                    return true;
-                }
-                return false;
-            }
-
-            // Try multiple strategies to detect when component is ready
-            document.addEventListener('astro:page-load', () => {
-                // Strategy 1: Check immediately
-                if (checkForComponent()) return;
-
-                // Strategy 2: Use MutationObserver to watch for DOM changes
-                const container = document.getElementById('questionnaire-content');
-                if (container) {
-                    const observer = new MutationObserver(() => {
-                        if (checkForComponent()) {
-                            observer.disconnect();
-                        }
-                    });
-                    observer.observe(container, { childList: true, subtree: true });
-
-                    // Strategy 3: Fallback timeout after 3 seconds
-                    setTimeout(() => {
-                        observer.disconnect();
-                        hideLoadingIndicator();
-                    }, 3000);
-                }
-
-                // Error handling
-                window.addEventListener('error', () => {
-                    const errorBoundary = document.getElementById('error-boundary');
-                    const questionnaireContainer = document.getElementById('questionnaire-content');
+            // Simple approach: show questionnaire after a short delay
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
                     const loadingIndicator = document.getElementById('loading-indicator');
+                    const questionnaireContent = document.getElementById('questionnaire-content');
 
-                    if (errorBoundary && questionnaireContainer) {
-                        errorBoundary.classList.remove('hidden');
-                        questionnaireContainer.style.display = 'none';
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'none';
                     }
-                });
+                    if (questionnaireContent) {
+                        questionnaireContent.style.display = 'block';
+                    }
+                }, 1000); // 1 second delay to allow React to mount
             });
         </script>
     </div>

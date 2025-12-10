@@ -103,100 +103,19 @@ const pageTitle =
         </div>
 
         <script>
-            // Hide loading indicator once React component mounts
-            function hideLoadingIndicator() {
-                const loadingIndicator = document.getElementById('loading-indicator');
-                const questionnaireContent = document.getElementById('questionnaire-content');
-
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'none';
-                }
-                if (questionnaireContent) {
-                    questionnaireContent.style.display = 'block';
-                }
-            }
-
-            // Check for React component mounting
-            function checkForComponent() {
-                const container = document.getElementById('questionnaire-content');
-                if (container && container.querySelector('form, [role="form"], .questionnaire-form')) {
-                    hideLoadingIndicator();
-                    return true;
-                }
-                return false;
-            }
-
-            // Try multiple strategies to detect when component is ready
-            document.addEventListener('astro:page-load', () => {
-                // Strategy 1: Check immediately
-                if (checkForComponent()) return;
-
-                // Strategy 2: Use MutationObserver to watch for DOM changes
-                const container = document.getElementById('questionnaire-content');
-                if (container) {
-                    const observer = new MutationObserver(() => {
-                        if (checkForComponent()) {
-                            observer.disconnect();
-                        }
-                    });
-                    observer.observe(container, { childList: true, subtree: true });
-
-                    // Strategy 3: Fallback timeout after 5 seconds
-                    setTimeout(() => {
-                        observer.disconnect();
-
-                        // Check if component actually loaded
-                        const componentLoaded = checkForComponent();
-                        if (!componentLoaded) {
-                            console.error('❌ React component failed to load after 5 seconds');
-
-                            // Check authentication state
-                            const user = localStorage.getItem('kuiper_user');
-                            const hasCookies = document.cookie.includes('kuiper_user=');
-
-                            console.log('🔍 Debug info:', {
-                                hasLocalStorage: !!user,
-                                hasCookies: hasCookies,
-                                currentPath: window.location.pathname
-                            });
-
-                            if (user && !hasCookies) {
-                                console.log('🔄 Session exists but cookies missing, refreshing page...');
-                                window.location.reload();
-                                return;
-                            }
-
-                            if (!user) {
-                                console.log('🔄 No user session, redirecting to login...');
-                                window.location.href = '/?redirect=' + encodeURIComponent(window.location.pathname);
-                                return;
-                            }
-
-                            // Show error boundary as last resort
-                            const errorBoundary = document.getElementById('error-boundary');
-                            if (errorBoundary) {
-                                errorBoundary.classList.remove('hidden');
-                            }
-                        }
-
-                        hideLoadingIndicator();
-                    }, 5000);
-                }
-
-                // Error handling
-                window.addEventListener('error', () => {
-                    const errorBoundary = document.getElementById('error-boundary');
-                    const questionnaireContainer = document.getElementById('questionnaire-content');
+            // Simple approach: show questionnaire after a short delay
+            document.addEventListener('DOMContentLoaded', () => {
+                setTimeout(() => {
                     const loadingIndicator = document.getElementById('loading-indicator');
+                    const questionnaireContent = document.getElementById('questionnaire-content');
 
-                    if (errorBoundary && questionnaireContainer) {
-                        errorBoundary.classList.remove('hidden');
-                        questionnaireContainer.style.display = 'none';
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
+                    if (loadingIndicator) {
+                        loadingIndicator.style.display = 'none';
                     }
-                });
+                    if (questionnaireContent) {
+                        questionnaireContent.style.display = 'block';
+                    }
+                }, 1000); // 1 second delay to allow React to mount
             });
         </script>
     </div>
