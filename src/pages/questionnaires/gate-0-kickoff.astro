@@ -141,11 +141,46 @@ const pageTitle =
                     });
                     observer.observe(container, { childList: true, subtree: true });
 
-                    // Strategy 3: Fallback timeout after 3 seconds
+                    // Strategy 3: Fallback timeout after 5 seconds
                     setTimeout(() => {
                         observer.disconnect();
+
+                        // Check if component actually loaded
+                        const componentLoaded = checkForComponent();
+                        if (!componentLoaded) {
+                            console.error('❌ React component failed to load after 5 seconds');
+
+                            // Check authentication state
+                            const user = localStorage.getItem('kuiper_user');
+                            const hasCookies = document.cookie.includes('kuiper_user=');
+
+                            console.log('🔍 Debug info:', {
+                                hasLocalStorage: !!user,
+                                hasCookies: hasCookies,
+                                currentPath: window.location.pathname
+                            });
+
+                            if (user && !hasCookies) {
+                                console.log('🔄 Session exists but cookies missing, refreshing page...');
+                                window.location.reload();
+                                return;
+                            }
+
+                            if (!user) {
+                                console.log('🔄 No user session, redirecting to login...');
+                                window.location.href = '/?redirect=' + encodeURIComponent(window.location.pathname);
+                                return;
+                            }
+
+                            // Show error boundary as last resort
+                            const errorBoundary = document.getElementById('error-boundary');
+                            if (errorBoundary) {
+                                errorBoundary.classList.remove('hidden');
+                            }
+                        }
+
                         hideLoadingIndicator();
-                    }, 3000);
+                    }, 5000);
                 }
 
                 // Error handling

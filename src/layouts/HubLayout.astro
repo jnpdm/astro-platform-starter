@@ -165,6 +165,24 @@ const pageTitle = `${title} | Kuiper Partner Onboarding Hub`;
                             console.log('User session restored:', user.email);
                             storeUserSession(user);
 
+                            // Check if we're on a protected route and need to refresh for server-side middleware
+                            const currentPath = window.location.pathname;
+                            const isProtected = isProtectedRoute(currentPath);
+
+                            if (isProtected) {
+                                // Check if cookies are already set (to avoid infinite refresh)
+                                const hasCookies = document.cookie.includes('kuiper_user=');
+
+                                if (!hasCookies) {
+                                    console.log('Protected route detected, refreshing to ensure server-side session...');
+                                    // Small delay to ensure cookies are set
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 100);
+                                    return;
+                                }
+                            }
+
                             // Dispatch auth state change event
                             window.dispatchEvent(new CustomEvent('auth-state-changed'));
                         }

@@ -277,8 +277,19 @@ export function storeUserSession(user: AuthUser): void {
         // Store in cookies (for server-side middleware access)
         // Use secure, httpOnly-like settings (SameSite=Strict for CSRF protection)
         const cookieOptions = `path=/; max-age=${SESSION_EXPIRATION_MS / 1000}; SameSite=Strict${window.location.protocol === 'https:' ? '; Secure' : ''}`;
+
+        console.log('🍪 Setting session cookies with options:', cookieOptions);
         document.cookie = `kuiper_user=${encodeURIComponent(JSON.stringify(user))}; ${cookieOptions}`;
         document.cookie = `kuiper_user_role=${encodeURIComponent(user.role)}; ${cookieOptions}`;
+
+        // Verify cookies were set
+        setTimeout(() => {
+            const cookiesSet = document.cookie.includes('kuiper_user=');
+            console.log('🍪 Cookies verification:', cookiesSet ? 'SUCCESS' : 'FAILED');
+            if (!cookiesSet) {
+                console.error('🍪 Failed to set cookies. Current cookies:', document.cookie);
+            }
+        }, 50);
     } catch (error) {
         // Use centralized storage error handling
         handleStorageError(error);
