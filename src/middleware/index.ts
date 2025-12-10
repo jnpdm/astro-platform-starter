@@ -22,6 +22,16 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
     console.log('[Middleware] Request to:', pathname);
 
+    // Check if authentication is enabled
+    const authEnabled = import.meta.env.AUTH_ENABLED !== 'false';
+    console.log('[Middleware] Auth enabled:', authEnabled);
+
+    // If auth is disabled, skip all authentication checks
+    if (!authEnabled) {
+        console.log('[Middleware] Authentication disabled, allowing access');
+        return next();
+    }
+
     // Skip middleware for public routes and static assets
     if (
         pathname.startsWith('/_') ||

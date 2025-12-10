@@ -23,5 +23,5 @@
     "files.associations": {
         "*.css": "tailwindcss"
     },
-    "kiroAgent.configureMCP": "Enabled"
+    "kiroAgent.configureMCP": "Disabled"
 }
