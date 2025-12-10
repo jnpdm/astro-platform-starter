@@ -103,20 +103,18 @@ const pageTitle =
         </div>
 
         <script>
-            // Simple approach: show questionnaire after a short delay
-            document.addEventListener('DOMContentLoaded', () => {
-                setTimeout(() => {
-                    const loadingIndicator = document.getElementById('loading-indicator');
-                    const questionnaireContent = document.getElementById('questionnaire-content');
+            // Show questionnaire immediately - React component is already mounting
+            setTimeout(() => {
+                const loadingIndicator = document.getElementById('loading-indicator');
+                const questionnaireContent = document.getElementById('questionnaire-content');
 
-                    if (loadingIndicator) {
-                        loadingIndicator.style.display = 'none';
-                    }
-                    if (questionnaireContent) {
-                        questionnaireContent.style.display = 'block';
-                    }
-                }, 1000); // 1 second delay to allow React to mount
-            });
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'none';
+                }
+                if (questionnaireContent) {
+                    questionnaireContent.style.display = 'block';
+                }
+            }, 500); // Short delay to allow React to mount
         </script>
     </div>
 </HubLayout>
